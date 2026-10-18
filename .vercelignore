@@ -1,0 +1,9 @@
+.env*
+!.env.example
+!.env.production.example
+.runtime
+.git
+node_modules
+uploads
+tests
+artifacts

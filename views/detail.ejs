@@ -1,0 +1,24 @@
+<%- include('partials/head') %>
+<main class="container detail-page" id="main">
+  <nav class="breadcrumbs" aria-label="Breadcrumbs"><a href="/">Library</a><span>/</span><a href="/?<%= new URLSearchParams({ game: script.game }) %>#library"><%= script.game %></a><span>/</span><span>Script details</span></nav>
+  <div class="detail-grid">
+    <section class="script-info"><img class="detail-cover" src="<%= script.image %>" alt="Cover image <%= script.title %>" width="800" height="450"><div class="detail-meta"><span class="tag"><%= script.game %></span><span>Updated <%= date(script.updated_at) %></span></div><h1><%= script.title %></h1><div class="author-line"><span class="mini-logo">X</span><strong>RobloXploit</strong><span>•</span><span>Published by admin</span></div><div class="about-section"><h2>About this script</h2><p class="preserve-lines"><%= script.description %></p></div></section>
+    <aside class="code-panel" aria-labelledby="code-title"><div class="code-panel-top"><div><%- include('partials/icon', { name: 'code' }) %><h2 id="code-title">Your script</h2></div><span class="language-tag">LUA</span></div><div id="locked-code" class="locked-code"><pre aria-hidden="true" class="blurred-code">-- RobloXploit Library
+local adventure = {}
+
+function adventure.start()
+    print("Ready to explore")
+    return true
+end
+
+adventure.start()
+-- Unlock to see your script</pre><div class="lock-overlay"><span class="lock-emblem"><%- include('partials/icon', { name: 'lock' }) %></span><h3>One step closer<br>to your next adventure.</h3><p>Complete <%= attempt.tasks.length %> quick tasks<br>to get your script.</p><button class="button unlock-button" id="open-unlock" <%= configured ? '' : 'disabled' %>><%- include('partials/icon', { name: 'lock' }) %>Unlock Script <%- include('partials/icon', { name: 'arrow' }) %></button><% if (!configured) { %><p class="setup-note">Unlock tasks are not set up yet. Please check back soon.</p><% } %></div></div><div id="unlocked-code" hidden><div class="unlocked-label"><%- include('partials/icon', { name: 'check' }) %>Successfully unlocked</div><div id="code-result"><pre class="actual-code" tabindex="0"><code id="script-content"></code></pre><div class="script-actions"><button class="button" id="copy-script"><%- include('partials/icon', { name: 'copy' }) %>Copy script</button><a class="button secondary" id="raw-script" target="_blank" rel="noopener">Raw</a></div></div><a class="button full-width" id="get-script" target="_blank" rel="noopener noreferrer" hidden>Get script ↗</a></div></aside>
+  </div>
+  <a class="text-link back-link" href="/">← Discover more scripts</a>
+</main>
+<dialog class="unlock-dialog" id="unlock-dialog" aria-labelledby="unlock-title" data-token="<%= attempt.token %>">
+  <button class="dialog-close" aria-label="Close unlock tasks" id="close-unlock">×</button><h2 id="unlock-title">Unlock script</h2><p class="dialog-intro">Support the channel with the steps below.<br>Complete them in order to get your script.</p><div class="progress-header"><span>Unlock progress</span><strong id="progress-label">0 / <%= attempt.tasks.length %></strong></div><progress id="unlock-progress" value="0" max="<%= attempt.tasks.length %>" aria-label="Unlock progress"></progress>
+  <div class="tasks"><% attempt.tasks.forEach((task, index) => { %><div class="task <%= index === 0 ? 'current' : '' %>" data-index="<%= index %>"><span class="task-icon"><%- include('partials/icon', { name: task.icon }) %></span><div class="task-copy"><h3><%= task.label %></h3><p><%= task.hint %></p></div><button class="task-button" data-task="<%= index %>" <%= index ? 'disabled' : '' %>><%= index ? 'Locked' : 'Start ↗' %></button></div><% }) %></div>
+  <p id="unlock-error" class="inline-error" role="alert"></p><button class="button reveal-button" id="reveal-script" disabled><%- include('partials/icon', { name: 'lock' }) %>Complete tasks to get your script</button>
+</dialog>
+<%- include('partials/footer') %>
