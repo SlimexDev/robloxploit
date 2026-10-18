@@ -1,5 +1,6 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
+import { parseTasks } from './configuration.js';
 const scrypt = promisify(scryptCallback);
 
 export async function hashPassword(password) {
@@ -83,6 +84,11 @@ export function parseScript(body) {
 }
 
 export function parseSettings(body) {
+  if (body.tasks_json !== undefined) {
+    const wait_seconds = Number(body.wait_seconds);
+    if (!Number.isInteger(wait_seconds) || wait_seconds < 1 || wait_seconds > 120) throw new Error('Wait time must be between 1 and 120 seconds.');
+    return { tasks: parseTasks(body.tasks_json), wait_seconds };
+  }
   const result = {};
   for (const key of ['channel_url', 'video_url']) {
     let url;

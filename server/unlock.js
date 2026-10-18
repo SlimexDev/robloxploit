@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto';
+import { taskTypes } from './configuration.js';
 
 export function taskList(settings) {
+  if (settings.tasks?.length) return settings.tasks.map(task => ({ ...taskTypes[task.type], ...task }));
   const tasks = [
     { label: 'Subscribe to channel', hint: 'Visit our channel and subscribe to support us.', url: settings.channel_url, icon: 'user' },
     { label: 'Watch video', hint: 'Open the video and explore the content.', url: settings.video_url, icon: 'play' },
@@ -14,7 +16,8 @@ export function taskList(settings) {
 }
 
 export function createAttempt(scriptId, settings, now = Date.now()) {
-  return { token: randomBytes(24).toString('hex'), scriptId, tasks: taskList(settings), wait: settings.wait_seconds * 1000, next: 0, startedAt: null, expiresAt: now + 30 * 60_000, done: false };
+  const tasks = taskList(settings), wait = settings.wait_seconds * 1000;
+  return { token: randomBytes(24).toString('hex'), scriptId, tasks, wait, next: 0, startedAt: null, expiresAt: now + Math.max(30 * 60_000, tasks.length * wait + 5 * 60_000), done: false };
 }
 
 function validate(attempt, index, now) {

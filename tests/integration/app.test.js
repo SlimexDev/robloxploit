@@ -16,7 +16,7 @@ test('MySQL end-to-end library, admin and unlock workflow', async t => {
   const schema = await readFile('schema.sql', 'utf8');
   for (const statement of schema.split(';').map(s => s.trim()).filter(Boolean)) await query(statement);
   await query('INSERT INTO admins (username, password_hash) VALUES (?, ?)', ['testadmin', await hashPassword('integration-password')]);
-  await query("INSERT INTO settings VALUES (1, 'https://www.youtube.com/@test', 'https://www.youtube.com/watch?v=test', 1, 1)");
+  await query("INSERT INTO settings (id, channel_url, video_url, combined, wait_seconds) VALUES (1, 'https://www.youtube.com/@test', 'https://www.youtube.com/watch?v=test', 1, 1)");
   const server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   const origin = `http://127.0.0.1:${server.address().port}`;
@@ -117,6 +117,30 @@ test('MySQL end-to-end library, admin and unlock workflow', async t => {
       const token = detail.match(/data-token="([^"]+)"/)[1];
       await request(`/robloxploit-slimexdev/scripts/${id}/visibility`, form({}));
       assert.equal((await api(token, 'start', 0)).status, 404);
+    });
+    await request(`/robloxploit-slimexdev/scripts/${id}/visibility`, form({}));
+    await t.test('custom tasks and sandboxed ads are configurable only by admin', async () => {
+      const tasks = [{type:'subscribe',label:'Channel One',url:'https://youtube.com/@one'}, {type:'subscribe',label:'Channel Two',url:'https://youtube.com/@two'}, {type:'custom',label:'Our website',url:'https://example.com/'}];
+      assert.equal((await request('/robloxploit-slimexdev/settings')).status, 200);
+      assert.equal((await request('/robloxploit-slimexdev/settings', form({ tasks_json:JSON.stringify(tasks), wait_seconds:'1' }))).status,303);
+      const detail = await (await request(`/script/${id}`)).text();
+      assert.match(detail,/Channel One/); assert.match(detail,/Channel Two/);
+      assert.equal((detail.match(/data-task=/g)||[]).length,3);
+      assert.equal((await request('/robloxploit-slimexdev/ads')).status,200);
+      const adCode='<script>console.log("AD_ONLY_IN_FRAME")</script>';
+      assert.equal((await request('/robloxploit-slimexdev/ads',form({_csrf:'invalid',banner_html:adCode,banner_enabled:'1'}))).status,403);
+      assert.equal((await request('/robloxploit-slimexdev/ads',form({banner_html:adCode,banner_enabled:'1',popup_html:'<p>POPUP_AD</p>',popup_enabled:'1'}))).status,303);
+      const home=await(await request('/')).text();
+      assert.match(home,/src="\/ads\/content\/banner"/); assert.match(home,/id="ad-popup"/); assert.doesNotMatch(home,/AD_ONLY_IN_FRAME/);
+      assert.doesNotMatch(await(await request('/robloxploit-slimexdev/ads')).text(),/id="ad-popup"/);
+      const ad=await fetch(origin+'/ads/content/banner'); assert.equal(ad.status,200);
+      assert.match(ad.headers.get('content-security-policy'),/sandbox allow-scripts allow-popups/);
+      assert.doesNotMatch(ad.headers.get('content-security-policy'),/allow-same-origin/);
+      assert.match(await ad.text(),/AD_ONLY_IN_FRAME/);
+      assert.equal((await request('/ads/content/unknown')).status,404);
+      assert.equal((await request('/robloxploit-slimexdev/ads',form({}))).status,303);
+      assert.equal((await request('/ads/content/banner')).status,404);
+      assert.doesNotMatch(await(await request('/')).text(),/id="ad-popup"|src="\/ads\/content\/banner"/);
     });
     await t.test('delete removes database record and owned image', async () => {
       assert.equal((await request(`/robloxploit-slimexdev/scripts/${id}/delete`, form({}))).status, 303);

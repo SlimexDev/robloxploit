@@ -24,5 +24,7 @@ CREATE TABLE IF NOT EXISTS settings (
   channel_url VARCHAR(500) NOT NULL,
   video_url VARCHAR(500) NOT NULL,
   combined BOOLEAN NOT NULL DEFAULT TRUE,
-  wait_seconds INT NOT NULL DEFAULT 7
+  wait_seconds INT NOT NULL DEFAULT 7,
+  tasks_json TEXT NULL,
+  ads_json MEDIUMTEXT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

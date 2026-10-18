@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS app_sessions (
   data JSONB NOT NULL,
   expires_at TIMESTAMPTZ NOT NULL
 );
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS tasks_json TEXT;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS ads_json TEXT;
 CREATE INDEX IF NOT EXISTS session_expiry ON app_sessions (expires_at);
 CREATE TABLE IF NOT EXISTS app_rate_limits (
   key VARCHAR(200) PRIMARY KEY,

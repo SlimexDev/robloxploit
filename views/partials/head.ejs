@@ -7,9 +7,9 @@
   <meta name="csrf-token" content="<%= csrf %>">
   <title><%= title %></title>
   <link rel="icon" href="/assets/robloxploit.png" type="image/png">
-  <link rel="stylesheet" href="/assets/style.css?v=1.0.8">
+  <link rel="stylesheet" href="/assets/style.css?v=1.1.0">
   <script src="/assets/effects.js?v=1.0.7" defer></script>
-  <script src="/assets/app.js?v=1.0.5" defer></script>
+  <script src="/assets/app.js?v=1.1.0" defer></script>
 </head>
 <body>
 <canvas id="particles" aria-hidden="true"></canvas>
@@ -20,3 +20,5 @@
     <nav aria-label="Main navigation"><a href="/" class="<%= path === '/' || path.startsWith('/script/') ? 'active' : '' %>">Explore</a><a href="/#library">Script library</a></nav>
   </div>
 </header>
+
+<% if (ads.banner?.enabled) { %><aside class="ad-banner container" aria-label="Advertisement"><small>Advertisement</small><iframe title="Banner advertisement" src="/ads/content/banner" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" loading="lazy"></iframe></aside><% } %>

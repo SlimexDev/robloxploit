@@ -5,7 +5,8 @@ import multer from 'multer';
 import path from 'node:path';
 import { query, publicColumns, getSettings, postgres } from './db.js';
 import { sessions, csrfGuard, adminOnly, verifyPassword, parseScript, parseSettings } from './security.js';
-import { createAttempt, startStep, completeStep } from './unlock.js';
+import { createAttempt, startStep, completeStep, taskList } from './unlock.js';
+import { taskTypes, parseAds } from './configuration.js';
 import { databaseSessions, DatabaseRateStore } from './cloud-state.js';
 import { saveImage, removeImage, uploadDir } from './images.js';
 
@@ -25,6 +26,7 @@ app.use((req, res, next) => {
   res.locals.title = 'RobloXploit — Discover Roblox Scripts';
   res.locals.error = null;
   res.locals.notice = null;
+  res.locals.ads = {};
   res.locals.date = value => new Intl.DateTimeFormat('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value));
   next();
 });
@@ -34,10 +36,20 @@ app.use(express.json({ limit: '16kb' }));
 
 app.use(postgres ? databaseSessions() : sessions());
 
+app.get('/ads/content/:slot', async (req, res) => {
+  if (!['banner', 'popup'].includes(req.params.slot)) return res.sendStatus(404);
+  const ad = (await getSettings()).ads[req.params.slot];
+  if (!ad?.enabled || !ad.html) return res.sendStatus(404);
+  // Ad scripts run in an opaque sandbox and cannot read application cookies or the parent page.
+  res.set('Content-Security-Policy', "default-src https: data: blob:; script-src https: 'unsafe-inline'; style-src https: 'unsafe-inline'; frame-src https:; connect-src https:; object-src 'none'; base-uri 'none'; sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox");
+  res.type('html').send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>Advertisement</title></head><body style="margin:0">${ad.html}</body></html>`);
+});
+
 const numericId = (req, res, next) => /^\d{1,10}$/.test(req.params.id) ? next() : res.status(404).render('error', { message: 'This script could not be found.' });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 1, fields: 10, fieldSize: 400000 }, fileFilter: (req, file, cb) => cb(['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype) ? null : new multer.MulterError('LIMIT_UNEXPECTED_FILE'), true) }).single('image');
 
 app.get('/', async (req, res) => {
+  res.locals.ads = (await getSettings()).ads;
   const search = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
   const game = typeof req.query.game === 'string' ? req.query.game.slice(0, 100) : '';
   const page = Math.min(10000, Math.max(1, parseInt(req.query.page, 10) || 1));
@@ -55,7 +67,8 @@ app.get('/script/:id', numericId, async (req, res) => {
   const [script] = await query(`SELECT ${publicColumns} FROM scripts WHERE id = ? AND published = 1`, [req.params.id]);
   if (!script) return res.status(404).render('error', { message: 'This script does not exist or is hidden.' });
   const settings = await getSettings();
-  const configured = Boolean(settings.channel_url && settings.video_url);
+  res.locals.ads = settings.ads;
+  const configured = taskList(settings).length > 0 && taskList(settings).every(task => Boolean(task.url));
   // A fresh token per document means reload/back navigation never reuses an unlocked visit.
   for (const [token, attempt] of req.session.attempts) {
     if (attempt.scriptId === script.id || attempt.expiresAt <= Date.now()) req.session.attempts.delete(token);
@@ -161,13 +174,30 @@ app.post('/robloxploit-slimexdev/scripts/:id/delete', numericId, csrfGuard, asyn
   }
   res.redirect(303, '/robloxploit-slimexdev?saved=1');
 });
-app.get('/robloxploit-slimexdev/settings', async (req, res) => res.render('admin-settings', { title: 'Unlock tasks — RobloXploit', settings: await getSettings(), notice: req.query.saved ? 'Task settings saved.' : null }));
+app.get('/robloxploit-slimexdev/settings', async (req, res) => res.render('admin-settings', { title: 'Unlock tasks — RobloXploit', settings: await getSettings(), taskTypes, taskList, notice: req.query.saved ? 'Task settings saved.' : null }));
 app.post('/robloxploit-slimexdev/settings', csrfGuard, async (req, res) => {
   let settings;
   try { settings = parseSettings(req.body); }
-  catch (error) { return res.status(422).render('admin-settings', { settings: { ...req.body, combined: req.body.mode === 'combined' }, error: error.message }); }
-  await query('UPDATE settings SET channel_url=?, video_url=?, combined=?, wait_seconds=? WHERE id=1', [settings.channel_url, settings.video_url, settings.combined, settings.wait_seconds]);
+  catch (error) {
+    const draft = await getSettings();
+    try {
+      const tasks = JSON.parse(req.body.tasks_json);
+      if (Array.isArray(tasks) && tasks.length > 0 && tasks.length <= 20 && tasks.every(task => task && Object.hasOwn(taskTypes, task.type) && typeof task.label === 'string' && typeof task.url === 'string')) draft.tasks = tasks;
+    } catch { /* Keep saved settings if the submitted list is malformed. */ }
+    return res.status(422).render('admin-settings', { settings: draft, taskTypes, taskList, error: error.message });
+  }
+  if (settings.tasks) await query('UPDATE settings SET tasks_json=?, wait_seconds=? WHERE id=1', [JSON.stringify(settings.tasks), settings.wait_seconds]);
+  else await query('UPDATE settings SET channel_url=?, video_url=?, combined=?, wait_seconds=?, tasks_json=NULL WHERE id=1', [settings.channel_url, settings.video_url, settings.combined, settings.wait_seconds]);
   res.redirect(303, '/robloxploit-slimexdev/settings?saved=1');
+});
+
+app.get('/robloxploit-slimexdev/ads', async (req, res) => res.render('admin-ads', { title: 'Advertisements — RobloXploit', config: (await getSettings()).ads, notice: req.query.saved ? 'Ad settings saved.' : null }));
+app.post('/robloxploit-slimexdev/ads', csrfGuard, async (req, res) => {
+  let config;
+  try { config = parseAds(req.body); }
+  catch (error) { return res.status(422).render('admin-ads', { config: { banner: { enabled: req.body.banner_enabled === '1', html: req.body.banner_html }, popup: { enabled: req.body.popup_enabled === '1', html: req.body.popup_html } }, error: error.message }); }
+  await query('UPDATE settings SET ads_json=? WHERE id=1', [JSON.stringify(config)]);
+  res.redirect(303, '/robloxploit-slimexdev/ads?saved=1');
 });
 
 app.use((req, res) => res.status(404).render('error', { message: 'The page you are looking for does not exist.' }));

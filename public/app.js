@@ -1,4 +1,13 @@
 const contentType = document.querySelector('#content-type');
+const adPopup = document.querySelector('#ad-popup');
+if (adPopup) {
+  const frame = adPopup.querySelector('iframe');
+  frame.src = frame.dataset.adSrc;
+  adPopup.showModal();
+  const closeAd = () => { adPopup.close(); frame.src = 'about:blank'; };
+  document.querySelector('#close-ad-popup').addEventListener('click', closeAd);
+  adPopup.addEventListener('cancel', closeAd);
+}
 contentType?.addEventListener('change', () => {
   const link = contentType.value === 'link';
   document.querySelector('#code-field').hidden = link;

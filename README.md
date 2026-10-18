@@ -212,5 +212,19 @@ vercel.json                  Routing và đóng gói Function
 - [Vercel Hobby](https://vercel.com/docs/plans/hobby)
 
 README này hướng dẫn tự triển khai; tài khoản GitHub/Vercel/Supabase, project cloud, tên miền và khóa thật phải do chủ dự án cấu hình.
-#   W e b s i t e - S c r i p t - H u b  
+#   W e b s i t e - S c r i p t - H u b 
  
+ 
+## Custom unlock tasks and advertisements
+
+Open `/robloxploit-slimexdev/settings` to add, remove, or reorder 1–20 tasks. Select Subscribe, Watch, Like, Comment, Like & comment, or Open link. Each row has its own HTTPS URL and display label; repeated types (such as two YouTube subscriptions) are supported. The shared wait time and sequential unlocking still apply to every visit. Existing YouTube settings remain in use until you save the new list.
+
+Open `/robloxploit-slimexdev/ads` for banner and popup placements. Each has an enable switch and an HTML/embed-code field. Disabled placements render nothing. Enabled ads appear only on the public homepage and script details. The popup is a dismissible modal shown once per document visit. Ad code runs in a sandboxed iframe; providers requiring parent-page access, cookies, or popunders may need a different supported embed from the provider. This is not an AdSense-specific integration.
+
+### Upgrade an existing database before deploying this version
+
+- Supabase: run `npm run setup:cloud` using your existing `.env.production.local`. The schema adds `tasks_json` and `ads_json` columns without deleting posts, existing task links, or admins. Alternatively run the two `ALTER TABLE settings ADD COLUMN IF NOT EXISTS ...` statements in `supabase/schema.sql` using the Supabase SQL Editor.
+- Local MySQL: run `npm run setup`. It adds missing configuration columns without deleting your library.
+- Commit and push the source after the schema upgrade, then let Vercel deploy. No new environment variables are required.
+
+Do not rerun `migrate:cloud` to upgrade a non-empty cloud library: it is intended only for the initial transfer.

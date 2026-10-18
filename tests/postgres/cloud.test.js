@@ -76,6 +76,29 @@ test('PostgreSQL cloud sessions, CRUD and concurrent unlock across app instances
       await request('/robloxploit-slimexdev/scripts/1/visibility',form({}));assert.equal((await request('/script/1')).status,404);
       await request('/robloxploit-slimexdev/scripts/1/visibility',form({}));assert.equal((await request('/script/1')).status,200);
     });
+    await t.test('custom tasks and sandboxed ads are configurable only by admin', async () => {
+      const tasks = [{type:'subscribe',label:'Channel One',url:'https://youtube.com/@one'}, {type:'subscribe',label:'Channel Two',url:'https://youtube.com/@two'}, {type:'custom',label:'Our website',url:'https://example.com/'}];
+      assert.equal((await request('/robloxploit-slimexdev/settings')).status, 200);
+      assert.equal((await request('/robloxploit-slimexdev/settings', form({ tasks_json:JSON.stringify(tasks), wait_seconds:'1' }))).status,303);
+      const detail = await (await request('/script/1')).text();
+      assert.match(detail,/Channel One/); assert.match(detail,/Channel Two/);
+      assert.equal((detail.match(/data-task=/g)||[]).length,3);
+      assert.equal((await request('/robloxploit-slimexdev/ads')).status,200);
+      const adCode='<script>console.log("AD_ONLY_IN_FRAME")</script>';
+      assert.equal((await request('/robloxploit-slimexdev/ads',form({_csrf:'invalid',banner_html:adCode,banner_enabled:'1'}))).status,403);
+      assert.equal((await request('/robloxploit-slimexdev/ads',form({banner_html:adCode,banner_enabled:'1',popup_html:'<p>POPUP_AD</p>',popup_enabled:'1'}))).status,303);
+      const home=await(await request('/')).text();
+      assert.match(home,/src="\/ads\/content\/banner"/); assert.match(home,/id="ad-popup"/); assert.doesNotMatch(home,/AD_ONLY_IN_FRAME/);
+      assert.doesNotMatch(await(await request('/robloxploit-slimexdev/ads')).text(),/id="ad-popup"/);
+      const ad=await fetch(origin+'/ads/content/banner'); assert.equal(ad.status,200);
+      assert.match(ad.headers.get('content-security-policy'),/sandbox allow-scripts allow-popups/);
+      assert.doesNotMatch(ad.headers.get('content-security-policy'),/allow-same-origin/);
+      assert.match(await ad.text(),/AD_ONLY_IN_FRAME/);
+      assert.equal((await request('/ads/content/unknown')).status,404);
+      assert.equal((await request('/robloxploit-slimexdev/ads',form({}))).status,303);
+      assert.equal((await request('/ads/content/banner')).status,404);
+      assert.doesNotMatch(await(await request('/')).text(),/id="ad-popup"|src="\/ads\/content\/banner"/);
+    });
     await t.test('rate limits shared across stores, logout persists',async()=>{
       const a=new DatabaseRateStore('test:');const b=new DatabaseRateStore('test:');a.init({windowMs:60000});b.init({windowMs:60000});
       assert.equal((await a.increment('same-ip')).totalHits,1);assert.equal((await b.increment('same-ip')).totalHits,2);

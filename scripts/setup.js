@@ -8,6 +8,9 @@ try {
   for (const statement of sql.split(';').map(s => s.trim()).filter(Boolean)) await query(statement);
   const columns = await query("SHOW COLUMNS FROM scripts LIKE 'script_url'");
   if (!columns.length) await query('ALTER TABLE scripts ADD COLUMN script_url VARCHAR(2000) NULL AFTER code');
+  for (const [column, type] of [['tasks_json', 'TEXT'], ['ads_json', 'MEDIUMTEXT']]) {
+    if (!(await query(`SHOW COLUMNS FROM settings LIKE '${column}'`)).length) await query(`ALTER TABLE settings ADD COLUMN ${column} ${type} NULL`);
+  }
   const username = process.env.ADMIN_USERNAME || 'admin';
   const existing = await query('SELECT id FROM admins WHERE username = ?', [username]);
   if (!existing.length) {

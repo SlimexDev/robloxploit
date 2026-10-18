@@ -1,0 +1,9 @@
+<%- include('partials/head') %><main class="container admin-page" id="main"><%- include('partials/admin-nav') %>
+<div class="section-heading"><div><h2>Advertisements</h2><p>Add your provider's banner or popup embed code whenever you are ready.</p></div></div>
+<form method="post" action="/robloxploit-slimexdev/ads" class="form-panel"><input type="hidden" name="_csrf" value="<%= csrf %>">
+<% for (const slot of ['banner', 'popup']) { const ad = config[slot] || {}; %>
+<fieldset class="task-editor-row"><legend><%= slot === 'banner' ? 'Banner ad' : 'Popup ad' %></legend>
+<label class="ad-toggle"><input type="checkbox" name="<%= slot %>_enabled" value="1" <%= ad.enabled ? 'checked' : '' %>>Enable <%= slot %></label>
+<label for="<%= slot %>-html">HTML / embed code</label><textarea id="<%= slot %>-html" name="<%= slot %>_html" rows="9" maxlength="50000" spellcheck="false" placeholder="Paste your ad provider's embed code here"><%= ad.html || '' %></textarea>
+<p class="field-help"><%= slot === 'banner' ? 'Shown below the header on the homepage and script details. Recommended size: 728 × 90.' : 'Shown in a dismissible modal once per page visit on public pages. Recommended content size: 600 × 400.' %></p></fieldset>
+<% } %><p class="field-help">Ad code runs inside a sandbox. Providers that require access to the main page, its cookies, or automatic popunders may not work. Only paste code from a provider you trust.</p><button class="button" type="submit">Save advertisements</button></form></main><%- include('partials/footer') %>

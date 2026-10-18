@@ -36,7 +36,7 @@ export async function query(sql, params = []) {
 }
 export const publicColumns = 'id, title, game, description, image, created_at, updated_at';
 export async function getSettings() {
-  const [settings] = await query('SELECT channel_url, video_url, combined, wait_seconds FROM settings WHERE id = 1');
+  const [settings] = await query('SELECT * FROM settings WHERE id = 1');
   if (!settings) throw new Error('Run database setup first.');
-  return { ...settings, combined: Boolean(settings.combined) };
+  return { ...settings, combined: Boolean(settings.combined), tasks: settings.tasks_json ? JSON.parse(settings.tasks_json) : null, ads: settings.ads_json ? JSON.parse(settings.ads_json) : {} };
 }
