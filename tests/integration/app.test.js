@@ -16,7 +16,7 @@ test('MySQL end-to-end library, admin and unlock workflow', async t => {
   const schema = await readFile('schema.sql', 'utf8');
   for (const statement of schema.split(';').map(s => s.trim()).filter(Boolean)) await query(statement);
   await query('INSERT INTO admins (username, password_hash) VALUES (?, ?)', ['testadmin', await hashPassword('integration-password')]);
-  await query("INSERT INTO settings (id, channel_url, video_url, combined, wait_seconds) VALUES (1, 'https://www.youtube.com/@test', 'https://www.youtube.com/watch?v=test', 1, 1)");
+  await query("INSERT INTO settings (id, channel_url, video_url, combined, wait_seconds) VALUES (1, 'https://www.youtube.com/@test', 'https://www.youtube.com/watch?v=M7lc1UVf-VE', 1, 1)");
   const server = app.listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));
   const origin = `http://127.0.0.1:${server.address().port}`;
@@ -29,7 +29,18 @@ test('MySQL end-to-end library, admin and unlock workflow', async t => {
     return response;
   };
   const form = data => ({ method: 'POST', body: new URLSearchParams({ _csrf: csrf, ...data }) });
-  const api = (token, action, index) => request(`/api/unlock/${token}/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify({ index }) });
+  const api = (token, action, index, extra = {}) => request(`/api/unlock/${token}/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify({ index, ...extra }) });
+  const waitForTask = async (token, index) => {
+    if (index !== 1) { await new Promise(resolve => setTimeout(resolve, 1020)); return; }
+    let remaining = (await (await api(token, 'playback', index, { playing: true })).json()).remainingMs;
+    for (let heartbeat = 0; remaining > 0 && heartbeat < 50; heartbeat++) {
+      await new Promise(resolve => setTimeout(resolve, 1020));
+      const response = await api(token, 'playback', index, { playing: true });
+      assert.equal(response.status, 200);
+      remaining = (await response.json()).remainingMs;
+    }
+    assert.equal(remaining, 0, 'Playback heartbeats must finish the watch task');
+  };
   let id;
   let imagePath;
   try {
@@ -76,7 +87,7 @@ test('MySQL end-to-end library, admin and unlock workflow', async t => {
       assert.equal((await api(token, 'complete', 0)).status, 400);
       for (let index = 0; index < 3; index++) {
         if (index) await api(token, 'start', index);
-        await new Promise(resolve => setTimeout(resolve, 1020));
+        await waitForTask(token, index);
         assert.equal((await api(token, 'complete', index)).status, 200);
       }
       assert.equal((await (await api(token, 'code')).json()).code, 'SECRET_LUA_MARKER_771');
@@ -97,7 +108,7 @@ test('MySQL end-to-end library, admin and unlock workflow', async t => {
       assert.equal((await api(token,'code')).status,403);
       for (let index=0;index<3;index++) {
         await api(token,'start',index);
-        await new Promise(resolve=>setTimeout(resolve,1020));
+        await waitForTask(token, index);
         assert.equal((await api(token,'complete',index)).status,200);
       }
       assert.deepEqual(await (await api(token,'code')).json(),{url});

@@ -17,8 +17,26 @@ adventure.start()
   <a class="text-link back-link" href="/">← Discover more scripts</a>
 </main>
 <dialog class="unlock-dialog" id="unlock-dialog" aria-labelledby="unlock-title" data-token="<%= attempt.token %>">
-  <button class="dialog-close" aria-label="Close unlock tasks" id="close-unlock">×</button><h2 id="unlock-title">Unlock script</h2><p class="dialog-intro">Complete the tasks below.<br>Complete them in order to get your script.</p><div class="progress-header"><span>Unlock progress</span><strong id="progress-label">0 / <%= attempt.tasks.length %></strong></div><progress id="unlock-progress" value="0" max="<%= attempt.tasks.length %>" aria-label="Unlock progress"></progress>
-  <div class="tasks"><% attempt.tasks.forEach((task, index) => { %><div class="task <%= index === 0 ? 'current' : '' %>" data-index="<%= index %>"><span class="task-icon"><%- include('partials/icon', { name: task.icon }) %></span><div class="task-copy"><h3><%= task.label %></h3><p><%= task.hint %></p></div><button class="task-button" data-task="<%= index %>" <%= index ? 'disabled' : '' %>><%= index ? 'Locked' : 'Start ↗' %></button></div><% }) %></div>
+  <button class="dialog-close" aria-label="Close unlock tasks" id="close-unlock">×</button>
+  <div class="unlock-heading"><span class="unlock-emblem"><%- include('partials/icon', { name: 'lock' }) %></span><h2 id="unlock-title">Content locked</h2><p class="dialog-intro">Complete the steps below to get your script.</p></div>
+  <div class="unlock-progress-card">
+    <div class="progress-header"><span>Your progress</span><strong id="progress-label" role="status">0 / <%= attempt.tasks.length %></strong></div>
+    <div id="unlock-progress" class="progress-segments" role="progressbar" aria-label="Unlock progress" aria-valuemin="0" aria-valuemax="<%= attempt.tasks.length %>" aria-valuenow="0"><% attempt.tasks.forEach(() => { %><span class="progress-segment" aria-hidden="true"></span><% }) %></div>
+  </div>
+  <div class="tasks">
+    <% attempt.tasks.forEach((task, index) => { %>
+      <div class="task-step" data-step="<%= index %>" <%= index ? 'hidden' : '' %>>
+        <% if (task.type === 'watch') { %><div class="task-video" id="task-video-<%= index %>" hidden><iframe id="youtube-player-<%= index %>" class="youtube-player" title="YouTube video: <%= task.label %>" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div><% } %>
+        <button type="button" class="task task-button <%= index === 0 ? 'current' : '' %>" data-task="<%= index %>" data-type="<%= task.type %>" data-video-id="<%= task.videoId || '' %>" aria-describedby="task-hint-<%= index %>" <%= index ? 'disabled' : '' %>>
+          <span class="task-icon"><%- include('partials/icon', { name: task.type === 'custom' ? 'external' : 'play' }) %></span>
+          <span class="task-copy"><span class="task-title"><%= task.label %></span><span class="task-hint" id="task-hint-<%= index %>"><%= index ? 'Complete the previous step first' : task.type === 'watch' ? 'Press play to continue · 40s left' : 'Click to start' %></span></span>
+          <span class="task-status" aria-hidden="true"><%- include('partials/icon', { name: index ? 'lock' : 'arrow' }) %></span>
+        </button>
+      </div>
+    <% }) %>
+  </div>
+  <aside class="unlock-ad-space" aria-label="Reserved advertisement placements"><span class="ad-space-label">Advertisement</span><div class="unlock-ad-grid" aria-hidden="true"><% for (let slot = 0; slot < 3; slot++) { %><div class="unlock-ad-placeholder"><span class="ad-image-placeholder"></span><span class="ad-line-placeholder"></span></div><% } %></div></aside>
   <p id="unlock-error" class="inline-error" role="alert"></p><button class="button reveal-button" id="reveal-script" disabled><%- include('partials/icon', { name: 'lock' }) %>Complete tasks to get your script</button>
 </dialog>
+<script src="/assets/unlock.js?v=1.2.0" defer></script>
 <%- include('partials/footer') %>

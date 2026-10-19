@@ -5,7 +5,7 @@ import multer from 'multer';
 import path from 'node:path';
 import { query, publicColumns, getSettings, postgres } from './db.js';
 import { sessions, csrfGuard, adminOnly, verifyPassword, parseScript, parseSettings } from './security.js';
-import { createAttempt, startStep, completeStep, taskList } from './unlock.js';
+import { createAttempt, startStep, completeStep, recordPlayback, taskList } from './unlock.js';
 import { taskTypes, parseAds } from './configuration.js';
 import { databaseSessions, DatabaseRateStore } from './cloud-state.js';
 import { saveImage, removeImage, uploadDir } from './images.js';
@@ -15,7 +15,7 @@ app.disable('x-powered-by');
 if (process.env.VERCEL || process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', path.resolve('views'));
-app.use(helmet({ contentSecurityPolicy: { directives: { 'script-src': ["'self'"], 'style-src': ["'self'"], 'img-src': ["'self'", 'blob:', ...(process.env.SUPABASE_URL ? [new URL(process.env.SUPABASE_URL).origin] : [])], 'upgrade-insecure-requests': process.env.NODE_ENV === 'production' ? [] : null } } }));
+app.use(helmet({ contentSecurityPolicy: { directives: { 'script-src': ["'self'", 'https://www.youtube.com'], 'frame-src': ["'self'", 'https://www.youtube-nocookie.com'], 'style-src': ["'self'"], 'img-src': ["'self'", 'blob:', ...(process.env.SUPABASE_URL ? [new URL(process.env.SUPABASE_URL).origin] : [])], 'upgrade-insecure-requests': process.env.NODE_ENV === 'production' ? [] : null } } }));
 app.use('/assets', express.static(path.resolve('public'), { maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0 }));
 app.use('/uploads', express.static(uploadDir, { maxAge: '7d', immutable: true, index: false }));
 app.use((req, res, next) => {
@@ -87,6 +87,7 @@ app.post('/api/unlock/:token/:action', csrfGuard, async (req, res) => {
   if (!attempt.tasks.every(t => t.url)) return res.status(409).json({ error: 'The admin has not configured task links yet.' });
   try {
     if (req.params.action === 'start') return res.json(startStep(attempt, req.body.index));
+    if (req.params.action === 'playback') return res.json(recordPlayback(attempt, req.body.index, req.body.playing));
     if (req.params.action === 'complete') return res.json({ done: completeStep(attempt, req.body.index), next: attempt.next });
     if (req.params.action === 'code') {
       if (!attempt.done) return res.status(403).json({ error: 'Please complete all tasks first.' });

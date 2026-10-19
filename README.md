@@ -217,7 +217,7 @@ README này hướng dẫn tự triển khai; tài khoản GitHub/Vercel/Supabas
  
 ## Custom unlock tasks and advertisements
 
-Open `/robloxploit-slimexdev/settings` to add, remove, or reorder 1–20 tasks. Select Subscribe, Watch, Like, Comment, Like & comment, or Open link. Each row has its own HTTPS URL and display label; repeated types (such as two YouTube subscriptions) are supported. The shared wait time and sequential unlocking still apply to every visit. Existing YouTube settings remain in use until you save the new list.
+Open `/robloxploit-slimexdev/settings` to add, remove, or reorder 1–20 tasks. Select Subscribe, Watch, Like, Comment, Like & comment, or Open link. Each row has its own HTTPS URL and display label; repeated types (such as two YouTube subscriptions) are supported. Sequential unlocking applies to every visit. Link tasks use the shared wait time. Watch tasks require 40 seconds of playback in the embedded YouTube player; pausing, buffering, hiding the tab or closing the unlock dialog stops the watch timer. Use a direct YouTube video link with embedding enabled. The server records bounded playback heartbeats rather than accepting a client-supplied watch duration. These reports come from the browser and are not independent proof of attention or YouTube engagement. Existing YouTube settings remain in use until you save the new list.
 
 Open `/robloxploit-slimexdev/ads` for banner and popup placements. Each has an enable switch and an HTML/embed-code field. Disabled placements render nothing. Enabled ads appear only on the public homepage and script details. The popup is a dismissible modal shown once per document visit. Ad code runs in a sandboxed iframe; providers requiring parent-page access, cookies, or popunders may need a different supported embed from the provider. This is not an AdSense-specific integration.
 
@@ -228,3 +228,5 @@ Open `/robloxploit-slimexdev/ads` for banner and popup placements. Each has an e
 - Commit and push the source after the schema upgrade, then let Vercel deploy. No new environment variables are required.
 
 Do not rerun `migrate:cloud` to upgrade a non-empty cloud library: it is intended only for the initial transfer.
+
+The unlock dialog includes a segmented progress indicator, full-width task buttons and three reserved ad placeholders. Only the current task is visible; completing it updates progress, hides that task and shows the next one. These placeholders do not load ads or change the banner/popup configuration. No database changes or new environment variables are needed for the video-player update.

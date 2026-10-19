@@ -22,7 +22,7 @@ test('PostgreSQL cloud sessions, CRUD and concurrent unlock across app instances
   try {
     await db.query(await readFile('supabase/schema.sql', 'utf8'));
     await query('INSERT INTO admins (username,password_hash) VALUES (?,?)',['tester',await hashPassword('long-test-password')]);
-    await query('UPDATE settings SET channel_url=?,video_url=?,wait_seconds=1 WHERE id=1',['https://youtube.com/@test','https://youtu.be/test']);
+    await query('UPDATE settings SET channel_url=?,video_url=?,wait_seconds=1 WHERE id=1',['https://youtube.com/@test','https://youtu.be/M7lc1UVf-VE']);
     await query('INSERT INTO scripts (title,game,description,code,script_url,image,published) VALUES (?,?,?,?,?,?,?)',['Cloud post','Game','Description','SECRET_CODE',null,'/assets/cover-placeholder.svg',1]);
     server=app.listen(0,'127.0.0.1'); await new Promise(r=>server.once('listening',r));
     const origin=`http://127.0.0.1:${server.address().port}`;
@@ -32,7 +32,17 @@ test('PostgreSQL cloud sessions, CRUD and concurrent unlock across app instances
       const next=r.headers.getSetCookie()[0];if(next) cookie=next.split(';')[0];return r;
     };
     const form=data=>({method:'POST',body:new URLSearchParams({_csrf:csrf,...data})});
-    const api=(token,action,index)=>request(`/api/unlock/${token}/${action}`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({index})});
+    const api=(token,action,index,extra={})=>request(`/api/unlock/${token}/${action}`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({index,...extra})});
+    const waitForTask=async(token,index)=>{
+      if(index!==1){await new Promise(resolve=>setTimeout(resolve,1050));return;}
+      let remaining=(await(await api(token,'playback',index,{playing:true})).json()).remainingMs;
+      for(let heartbeat=0;remaining>0&&heartbeat<50;heartbeat++){
+        await new Promise(resolve=>setTimeout(resolve,1050));
+        const response=await api(token,'playback',index,{playing:true});assert.equal(response.status,200);
+        remaining=(await response.json()).remainingMs;
+      }
+      assert.equal(remaining,0,'Playback heartbeats must finish the watch task');
+    };
     await t.test('login rotates token and persists admin, rejects CSRF and old path',async()=>{
       assert.equal((await request('/admin')).status,404);
       const html=await(await request('/robloxploit-slimexdev/login')).text();
@@ -58,7 +68,7 @@ test('PostgreSQL cloud sessions, CRUD and concurrent unlock across app instances
       for(let i=0;i<3;i++){
         assert.equal((await api(token,'start',i)).status,200);
         assert.equal((await api(token,'complete',i)).status,400);
-        await new Promise(r=>setTimeout(r,1050));
+        await waitForTask(token,i);
         const results=await Promise.all([api(token,'complete',i),api(token,'complete',i)]);
         assert.deepEqual(results.map(r=>r.status).sort(),[200,400]);
       }
@@ -71,7 +81,7 @@ test('PostgreSQL cloud sessions, CRUD and concurrent unlock across app instances
       assert.match(await(await request('/?q=linked')).text(),/Linked script/);
       const detail=await(await request('/script/1')).text();assert.doesNotMatch(detail,/PRIVATE_LINK/);
       const token=detail.match(/data-token="([^"]+)"/)[1];
-      for(let i=0;i<3;i++){await api(token,'start',i);await new Promise(r=>setTimeout(r,1050));await api(token,'complete',i);}
+      for(let i=0;i<3;i++){await api(token,'start',i);await waitForTask(token,i);await api(token,'complete',i);}
       assert.deepEqual(await(await api(token,'code')).json(),{url:'https://example.com/PRIVATE_LINK'});
       await request('/robloxploit-slimexdev/scripts/1/visibility',form({}));assert.equal((await request('/script/1')).status,404);
       await request('/robloxploit-slimexdev/scripts/1/visibility',form({}));assert.equal((await request('/script/1')).status,200);

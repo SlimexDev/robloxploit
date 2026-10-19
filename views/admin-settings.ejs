@@ -18,7 +18,7 @@
 <div class="task-editor-actions"><button class="button secondary small-button" type="button" data-move="-1" aria-label="Move task up">↑ Move up</button><button class="button secondary small-button" type="button" data-move="1" aria-label="Move task down">↓ Move down</button><button class="button secondary small-button" type="button" data-remove>Remove</button></div></fieldset></template>
 <button type="button" class="button secondary" id="add-task">+ Add task</button>
 <p class="field-help">1–20 tasks. Choose Open link for other websites. Tasks are shared across all scripts and completed in the order shown.</p>
-<label for="wait_seconds">Wait time per task (seconds)</label><input type="number" id="wait_seconds" name="wait_seconds" min="1" max="120" required value="<%= settings.wait_seconds %>">
-<p class="field-help">Visitors repeat the tasks each time they open a script. The timer records link openings; subscriptions and other interactions are not verified.</p>
+<label for="wait_seconds">Wait time for link tasks (seconds)</label><input type="number" id="wait_seconds" name="wait_seconds" min="1" max="120" required value="<%= settings.wait_seconds %>">
+<p class="field-help">Watch video tasks require 40 seconds of playback in the embedded YouTube player. Pausing the video, closing the unlock window or switching tabs pauses the watch timer. Use a direct video link with embedding enabled. Other tasks use the wait time above; subscriptions and other interactions are not verified.</p>
 <button class="button" type="submit">Save tasks</button></form></main>
 <script src="/assets/admin-tasks.js?v=1" defer></script><%- include('partials/footer') %>
