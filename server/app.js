@@ -6,9 +6,10 @@ import path from 'node:path';
 import { query, publicColumns, getSettings, postgres } from './db.js';
 import { sessions, csrfGuard, adminOnly, verifyPassword, parseScript, parseSettings } from './security.js';
 import { createAttempt, startStep, completeStep, recordPlayback, taskList } from './unlock.js';
-import { taskTypes, parseAds } from './configuration.js';
+import { taskTypes, parseAds, adDraft, adMarkup } from './configuration.js';
 import { databaseSessions, DatabaseRateStore } from './cloud-state.js';
 import { saveImage, removeImage, uploadDir } from './images.js';
+import { codePages, adminCodePages } from './code-pages.js';
 
 export const app = express();
 app.disable('x-powered-by');
@@ -35,14 +36,16 @@ app.use(express.urlencoded({ extended: false, limit: '400kb' }));
 app.use(express.json({ limit: '16kb' }));
 
 app.use(postgres ? databaseSessions() : sessions());
+app.use('/code', codePages);
+app.use('/robloxploit-slimexdev/code', adminOnly, adminCodePages);
 
 app.get('/ads/content/:slot', async (req, res) => {
   if (!['banner', 'popup'].includes(req.params.slot)) return res.sendStatus(404);
   const ad = (await getSettings()).ads[req.params.slot];
-  if (!ad?.enabled || !ad.html) return res.sendStatus(404);
+  if (!ad?.enabled || !adMarkup(ad)) return res.sendStatus(404);
   // Ad scripts run in an opaque sandbox and cannot read application cookies or the parent page.
   res.set('Content-Security-Policy', "default-src https: data: blob:; script-src https: 'unsafe-inline'; style-src https: 'unsafe-inline'; frame-src https:; connect-src https:; object-src 'none'; base-uri 'none'; sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox");
-  res.type('html').send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>Advertisement</title></head><body style="margin:0">${ad.html}</body></html>`);
+  res.type('html').send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>Advertisement</title></head><body style="margin:0">${adMarkup(ad)}</body></html>`);
 });
 
 const numericId = (req, res, next) => /^\d{1,10}$/.test(req.params.id) ? next() : res.status(404).render('error', { message: 'This script could not be found.' });
@@ -196,7 +199,7 @@ app.get('/robloxploit-slimexdev/ads', async (req, res) => res.render('admin-ads'
 app.post('/robloxploit-slimexdev/ads', csrfGuard, async (req, res) => {
   let config;
   try { config = parseAds(req.body); }
-  catch (error) { return res.status(422).render('admin-ads', { config: { banner: { enabled: req.body.banner_enabled === '1', html: req.body.banner_html }, popup: { enabled: req.body.popup_enabled === '1', html: req.body.popup_html } }, error: error.message }); }
+  catch (error) { return res.status(422).render('admin-ads', { config: adDraft(req.body), error: error.message }); }
   await query('UPDATE settings SET ads_json=? WHERE id=1', [JSON.stringify(config)]);
   res.redirect(303, '/robloxploit-slimexdev/ads?saved=1');
 });

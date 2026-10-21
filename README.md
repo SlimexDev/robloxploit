@@ -47,6 +47,17 @@ Mở `/robloxploit-slimexdev/ads` để bật/tắt và nhập mã HTML/embed ch
 - Ba ô trong cửa sổ unlock hiện chỉ là vị trí dành chỗ, chưa tải quảng cáo và chưa có ô nhập mã riêng trong admin.
 - Mã quảng cáo chạy trong iframe sandbox. Mã yêu cầu truy cập trang cha, cookie hoặc tự mở popunder có thể không hoạt động; cần dùng kiểu nhúng tương thích của nhà cung cấp.
 
+## Trang Script code riêng
+
+Trong admin, mở **Script code** tại `/robloxploit-slimexdev/code` để tạo, sửa, ẩn/hiện hoặc xóa các trang code độc lập. Mỗi trang có tiêu đề và mã Lua; không cần game, ảnh bìa hoặc nhiệm vụ mở khóa. Khi bật Publish, bất kỳ ai có liên kết đều đọc được code.
+
+- Trang công khai: `/code/ID`, có tô màu cú pháp Lua, số dòng, dung lượng UTF-8, Copy, Raw và Download.
+- Raw: `/code/ID/raw`, trả về văn bản thuần. Download: `/code/ID/download`, tải file `.lua`.
+- Ẩn trang sẽ chặn cả trang xem, Raw và Download đối với các request mới. Người đã sao chép hoặc tải code vẫn giữ bản sao của họ.
+- Banner và popup dùng cấu hình chung trong **Advertisements**. Không chèn quảng cáo vào nội dung Raw hoặc file tải về.
+
+**Trước khi deploy tính năng này:** chạy `npm run setup:cloud` cho Supabase hoặc `npm run setup` cho MySQL để tạo bảng `code_pages`. Không cần chuyển lại dữ liệu hay thêm biến môi trường. Mã nguồn cập nhật schema và bật RLS cho bảng mới; bảng không cấp quyền truy cập trực tiếp cho khách qua Supabase Data API.
+
 ## Cập nhật website đã triển khai
 
 Nếu GitHub đã liên kết với Vercel và database đã có cấu hình nhiệm vụ/quảng cáo, cập nhật giao diện hoặc trình phát video chỉ cần:
@@ -267,3 +278,7 @@ vercel.json                  Routing và đóng gói Function
 - [Vercel Hobby](https://vercel.com/docs/plans/hobby)
 
 README này hướng dẫn tự triển khai; tài khoản GitHub/Vercel/Supabase, project cloud, tên miền và khóa thật phải do chủ dự án cấu hình.
+
+### Loại quảng cáo
+
+Trong Admin → Advertisements, mỗi vị trí Top banner hoặc Popup overlay có thể chọn HTML/provider embed, ảnh có link HTTPS hoặc nút sponsored link. Bật/tắt riêng từng vị trí; tắt vẫn giữ nội dung. Cấu hình cũ tiếp tục dùng được và không cần đổi schema database. Popup có nút đóng, xuất hiện mỗi lượt tải trang. Mã nhúng chạy sandbox; mã cần truy cập trang chính hoặc tự mở popunder không được hỗ trợ.

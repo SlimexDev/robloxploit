@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseTasks, parseAds } from '../server/configuration.js';
+import { parseTasks, parseAds, adMarkup } from '../server/configuration.js';
 import { parseSettings } from '../server/security.js';
 import { taskList, createAttempt, startStep, completeStep } from '../server/unlock.js';
 
@@ -37,4 +37,16 @@ test('ads are disabled by default and enabled placements require bounded content
   assert.throws(() => parseAds({ banner_enabled: '1' }));
   assert.throws(() => parseAds({ banner_html: 'x'.repeat(50001) }));
   assert.equal(parseAds({ popup_enabled: '1', popup_html: '<p>Ad</p>' }).popup.enabled, true);
+});
+
+test('ad types validate destinations and escape generated markup', () => {
+  const body = { banner_type: 'image', banner_enabled: '1', banner_image: 'https://example.com/ad.webp', banner_url: 'https://example.com/', banner_label: '<Sponsor>' };
+  const ad = parseAds(body).banner;
+  assert.match(adMarkup(ad), /&lt;Sponsor&gt;/);
+  assert.match(adMarkup(ad), /rel="noopener sponsored noreferrer"/);
+  assert.throws(() => parseAds({ ...body, banner_url: 'javascript:alert(1)' }));
+  assert.throws(() => parseAds({ ...body, banner_image: '' }));
+  assert.throws(() => parseAds({ ...body, banner_type: 'unknown' }));
+  assert.equal(parseAds({ ...body, banner_enabled: '' }).banner.image, body.banner_image);
+  assert.match(adMarkup(parseAds({ ...body, banner_type: 'link' }).banner), /&lt;Sponsor&gt;<\/a>/);
 });

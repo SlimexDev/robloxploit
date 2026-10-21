@@ -54,6 +54,22 @@ test('PostgreSQL cloud sessions, CRUD and concurrent unlock across app instances
       assert.match(dashboard,/Manage posts/);csrf=dashboard.match(/name="csrf-token" content="([^"]+)"/)[1];
       assert.equal((await fetch(origin+'/robloxploit-slimexdev',{redirect:'manual',headers:{Cookie:before}})).status,303);
     });
+    await t.test('standalone code pages persist, export safely and block hidden pages',async()=>{
+      const code='  print("cloud")\n-- </code><script>CODE_PAGE_TEST</script>\n';
+      assert.equal((await request('/robloxploit-slimexdev/code',form({title:'Cloud code',code,published:'1'}))).status,303);
+      const [row]=await query('SELECT id FROM code_pages');
+      const url=`/code/${row.id}`;
+      const html=await(await request(url)).text();
+      assert.match(html,/&lt;script&gt;CODE_PAGE_TEST/);
+      assert.doesNotMatch(html,/<script>CODE_PAGE_TEST/);
+      assert.equal(await(await request(url+'/raw')).text(),code);
+      const download=await request(url+'/download');assert.equal(download.status,200);assert.match(download.headers.get('content-disposition'),/attachment/);
+      const [security]=await query("SELECT relrowsecurity FROM pg_class WHERE oid='code_pages'::regclass");assert.equal(security.relrowsecurity,true);
+      await request(`/robloxploit-slimexdev/code/${row.id}/visibility`,form({}));
+      for(const suffix of ['', '/raw','/download'])assert.equal((await request(url+suffix)).status,404);
+      await request(`/robloxploit-slimexdev/code/${row.id}/delete`,form({}));
+      assert.equal((await query('SELECT id FROM code_pages')).length,0);
+    });
     await t.test('another middleware instance reads session and serializes overlapping changes',async()=>{
       const other=express();other.use(databaseSessions());
       other.get('/',async(req,res)=>{const n=req.session.counter||0;await new Promise(r=>setTimeout(r,25));req.session.counter=n+1;res.json({admin:req.session.admin,n:req.session.counter});});

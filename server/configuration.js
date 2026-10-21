@@ -35,14 +35,46 @@ export function parseTasks(value) {
   });
 }
 
+export function adDraft(body) {
+  return Object.fromEntries(['banner', 'popup'].map(slot => [slot, {
+    enabled: body[`${slot}_enabled`] === '1',
+    ...Object.fromEntries(['type', 'html', 'image', 'url', 'label'].map(key => [key, typeof body[`${slot}_${key}`] === 'string' ? body[`${slot}_${key}`] : '']))
+  }]));
+}
+
+const escapeAd = value => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+export function adMarkup(ad) {
+  if (!ad.type || ad.type === 'embed') return ad.html;
+  const label = escapeAd(ad.label || 'Visit sponsor');
+  const content = ad.type === 'image' ? `<img src="${escapeAd(ad.image)}" alt="${label}" style="max-width:100%;max-height:100vh;object-fit:contain">` : label;
+  return `<a href="${escapeAd(ad.url)}" target="_blank" rel="noopener sponsored noreferrer" style="display:flex;align-items:center;justify-content:center;min-height:80px;color:white;background:#231b32;font:600 16px sans-serif;text-decoration:none">${content}</a>`;
+}
+
 export function parseAds(body) {
-  const ads = {};
   for (const slot of ['banner', 'popup']) {
-    const html = body[`${slot}_html`] ?? '';
-    if (typeof html !== 'string' || html.length > 50000) throw new Error('Ad code must be 50,000 characters or fewer per placement.');
-    const enabled = body[`${slot}_enabled`] === '1';
-    if (enabled && !html.trim()) throw new Error('Add ad code before enabling a placement.');
-    ads[slot] = { enabled, html: html.trim() };
+    for (const key of ['type', 'html', 'image', 'url', 'label']) {
+      const value = body[`${slot}_${key}`];
+      if (value !== undefined && typeof value !== 'string') throw new Error('Ad fields must contain text.');
+    }
+  }
+  const ads = adDraft(body);
+  for (const [slot, ad] of Object.entries(ads)) {
+    const type = ad.type || 'embed';
+    if (!['embed', 'image', 'link'].includes(type)) throw new Error('Choose a valid ad type.');
+    if (ad.html.length > 50000 || ad.label.length > 120) throw new Error('Ad code: maximum 50,000 characters. Label: maximum 120 characters.');
+    for (const key of ['url', 'image']) {
+      ad[key] = ad[key].trim();
+      if (ad[key]) {
+        let url;
+        try { url = new URL(ad[key]); } catch { throw new Error('Ad links and images need valid HTTPS URLs.'); }
+        if (url.protocol !== 'https:' || url.username || url.password || ad[key].length > 2000) throw new Error('Use HTTPS ad URLs without credentials (maximum 2,000 characters).');
+      }
+    }
+    ad.html = ad.html.trim();
+    if (ad.enabled && (type === 'embed' ? !ad.html : !ad.url || (type === 'image' && !ad.image))) throw new Error(`Complete the ${slot} content before enabling it.`);
+    // Preserve the existing stored format when older clients submit embed-only ads.
+    if (!body[`${slot}_type`]) ads[slot] = { enabled: ad.enabled, html: ad.html };
+    else ad.type = type;
   }
   return ads;
 }

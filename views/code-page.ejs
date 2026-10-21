@@ -1,0 +1,15 @@
+<%- include('partials/head') %>
+<main class="container public-code-page" id="main">
+  <a class="text-link" href="/">← Script library</a>
+  <h1><%= page.title %></h1>
+  <section class="script-code-panel" aria-labelledby="script-code-title">
+    <div class="script-code-toolbar">
+      <div class="script-code-heading"><span class="code-page-icon"><%- include('partials/icon', { name: 'code' }) %></span><div><h2 id="script-code-title">Script code</h2><p><%= lines.toLocaleString('en-US') %> lines · <%= bytes.toLocaleString('en-US') %> B</p></div></div>
+      <div class="script-code-actions"><button type="button" class="button secondary small-button" id="copy-page-code"><%- include('partials/icon', { name: 'copy' }) %>Copy</button><a class="button secondary small-button" href="/code/<%= page.id %>/raw" target="_blank" rel="noopener">Raw ↗</a><a class="button secondary small-button" href="/code/<%= page.id %>/download" download="script-<%= page.id %>.lua">↓ Download</a></div>
+    </div>
+    <pre class="public-script-code" tabindex="0" aria-label="Lua script code"><code id="page-script-content"><%= page.code %></code></pre>
+  </section>
+  <p class="field-help">Updated <%= date(page.updated_at) %> · Lua · Published by RobloXploit</p>
+</main>
+<script src="/assets/code-page.js?v=2" type="module"></script>
+<%- include('partials/footer') %>

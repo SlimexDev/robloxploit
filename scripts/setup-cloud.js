@@ -10,7 +10,7 @@ try {
   if (!username || username.length > 80 || !password || password.length < 12 || password.length > 256) throw new Error('Set ADMIN_USERNAME and a strong ADMIN_PASSWORD (12–256 characters).');
   await db.query(await readFile(new URL('../supabase/schema.sql', import.meta.url), 'utf8'));
   // Application tables are server-only; browser API keys must never reveal locked content.
-  await db.query('REVOKE ALL ON admins, scripts, settings, app_sessions, app_rate_limits FROM anon, authenticated');
+  await db.query('REVOKE ALL ON admins, scripts, settings, app_sessions, app_rate_limits, code_pages FROM anon, authenticated');
   await db.query('INSERT INTO admins (username,password_hash) VALUES ($1,$2) ON CONFLICT (username) DO NOTHING', [username, await hashPassword(password)]);
   let exists = true;
   try { await storageRequest(`bucket/${bucket}`); } catch (error) { if (error.status === 404 || error.status === 400) exists = false; else throw error; }

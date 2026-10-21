@@ -1,0 +1,14 @@
+<%- include('partials/head') %>
+<main class="container admin-page" id="main"><%- include('partials/admin-nav') %>
+  <a class="text-link" href="/robloxploit-slimexdev/code">← All code pages</a>
+  <div class="section-heading edit-heading"><div><h2><%= editing ? 'Edit code page' : 'New code page' %></h2><p>A standalone script page, managed separately from library posts.</p></div></div>
+  <form class="form-panel" method="post" enctype="multipart/form-data" action="<%= editing ? `/robloxploit-slimexdev/code/${page.id}/edit` : '/robloxploit-slimexdev/code' %>">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label for="code-page-title">Title *</label><input id="code-page-title" name="title" maxlength="160" required value="<%= page.title %>" placeholder="Example: Harpoon a Fish Script">
+    <label for="page-code">Script code *</label><textarea id="page-code" name="code" class="code-editor" rows="20" maxlength="300000" required spellcheck="false" placeholder="-- Paste your Lua code here"><%= page.code %></textarea>
+    <label class="check-label"><input type="checkbox" name="published" value="1" <%= page.published ? 'checked' : '' %>><span>Publish code page<small>Anyone with the link can view, copy or download this code without completing tasks.</small></span></label>
+    <% if (editing) { %><p class="field-help">Page URL: /code/<%= page.id %><% if (page.published) { %> · <a class="text-link" href="/code/<%= page.id %>" target="_blank" rel="noopener">Open page ↗</a><% } %></p><% } %>
+    <p class="field-help">Banner and popup ads use your shared <a class="text-link" href="/robloxploit-slimexdev/ads">advertisement settings</a>.</p>
+    <button class="button" type="submit">Save code page</button><a class="button secondary" href="/robloxploit-slimexdev/code">Cancel</a>
+  </form>
+</main><%- include('partials/footer') %>
