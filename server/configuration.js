@@ -36,7 +36,7 @@ export function parseTasks(value) {
 }
 
 export function adDraft(body) {
-  return Object.fromEntries(['banner', 'popup'].map(slot => [slot, {
+  return Object.fromEntries(['banner', 'bottom', 'left', 'right', 'popup'].map(slot => [slot, {
     enabled: body[`${slot}_enabled`] === '1',
     ...Object.fromEntries(['type', 'html', 'image', 'url', 'label'].map(key => [key, typeof body[`${slot}_${key}`] === 'string' ? body[`${slot}_${key}`] : '']))
   }]));
@@ -51,7 +51,7 @@ export function adMarkup(ad) {
 }
 
 export function parseAds(body) {
-  for (const slot of ['banner', 'popup']) {
+  for (const slot of ['banner', 'bottom', 'left', 'right', 'popup']) {
     for (const key of ['type', 'html', 'image', 'url', 'label']) {
       const value = body[`${slot}_${key}`];
       if (value !== undefined && typeof value !== 'string') throw new Error('Ad fields must contain text.');

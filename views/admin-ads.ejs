@@ -1,9 +1,9 @@
 <%- include('partials/head') %><main class="container admin-page" id="main"><%- include('partials/admin-nav') %>
 <div class="section-heading"><div><h2>Advertisements</h2><p>Choose a placement, select its content type, then enable it when ready.</p></div></div>
 <form method="post" action="/robloxploit-slimexdev/ads" class="form-panel"><input type="hidden" name="_csrf" value="<%= csrf %>">
-<% for (const slot of ['banner', 'popup']) { const ad = config[slot] || {}; const type = ad.type || 'embed'; %>
-<fieldset class="task-editor-row" data-ad-editor><legend><%= slot === 'banner' ? 'Top banner' : 'Popup overlay' %></legend>
-<p class="field-help"><%= slot === 'banner' ? 'Below the header on home, script and code pages. Recommended: 728 × 90.' : 'A closable overlay on public pages. Recommended: 600 × 400. Appears once per page visit.' %></p>
+<% for (const slot of ['banner', 'bottom', 'left', 'right', 'popup']) { const ad = config[slot] || {}; const type = ad.type || 'embed'; %>
+<fieldset class="task-editor-row" data-ad-editor><legend><%= { banner: 'Top banner', bottom: 'Bottom banner', left: 'Left sidebar', right: 'Right sidebar', popup: 'Popup overlay' }[slot] %></legend>
+<p class="field-help"><%= { banner: 'Below the header. Recommended: 728 × 90.', bottom: 'Above the footer. Recommended: 728 × 90.', left: 'Left of the content on wide desktop screens. Recommended: 160 × 600.', right: 'Right of the content on wide desktop screens. Recommended: 160 × 600.', popup: 'A closable overlay on public pages. Recommended: 600 × 400. Appears once per page visit.' }[slot] %></p>
 <label class="ad-toggle"><input type="checkbox" name="<%= slot %>_enabled" value="1" <%= ad.enabled ? 'checked' : '' %>>Enable this placement</label>
 <label for="<%= slot %>-type">Content type</label><select id="<%= slot %>-type" name="<%= slot %>_type" data-ad-type>
 <% for (const [value, label] of [['embed', 'HTML / provider embed'], ['image', 'Image banner with link'], ['link', 'Sponsored link button']]) { %><option value="<%= value %>" <%= type === value ? 'selected' : '' %>><%= label %></option><% } %></select>

@@ -281,4 +281,4 @@ README này hướng dẫn tự triển khai; tài khoản GitHub/Vercel/Supabas
 
 ### Loại quảng cáo
 
-Trong Admin → Advertisements, mỗi vị trí Top banner hoặc Popup overlay có thể chọn HTML/provider embed, ảnh có link HTTPS hoặc nút sponsored link. Bật/tắt riêng từng vị trí; tắt vẫn giữ nội dung. Cấu hình cũ tiếp tục dùng được và không cần đổi schema database. Popup có nút đóng, xuất hiện mỗi lượt tải trang. Mã nhúng chạy sandbox; mã cần truy cập trang chính hoặc tự mở popunder không được hỗ trợ.
+Trong Admin → Advertisements, mỗi vị trí Top banner, Bottom banner, Left sidebar, Right sidebar hoặc Popup overlay có thể chọn HTML/provider embed, ảnh có link HTTPS hoặc nút sponsored link. Bật/tắt riêng từng vị trí; tắt vẫn giữ nội dung. Cấu hình cũ tiếp tục dùng được và không cần đổi schema database. Popup có nút đóng, xuất hiện mỗi lượt tải trang. Mã nhúng chạy sandbox; mã cần truy cập trang chính hoặc tự mở popunder không được hỗ trợ.

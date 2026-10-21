@@ -40,7 +40,7 @@ app.use('/code', codePages);
 app.use('/robloxploit-slimexdev/code', adminOnly, adminCodePages);
 
 app.get('/ads/content/:slot', async (req, res) => {
-  if (!['banner', 'popup'].includes(req.params.slot)) return res.sendStatus(404);
+  if (!['banner', 'bottom', 'left', 'right', 'popup'].includes(req.params.slot)) return res.sendStatus(404);
   const ad = (await getSettings()).ads[req.params.slot];
   if (!ad?.enabled || !adMarkup(ad)) return res.sendStatus(404);
   // Ad scripts run in an opaque sandbox and cannot read application cookies or the parent page.

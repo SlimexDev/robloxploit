@@ -50,3 +50,17 @@ test('ad types validate destinations and escape generated markup', () => {
   assert.equal(parseAds({ ...body, banner_enabled: '' }).banner.image, body.banner_image);
   assert.match(adMarkup(parseAds({ ...body, banner_type: 'link' }).banner), /&lt;Sponsor&gt;<\/a>/);
 });
+
+test('all placements save independently and validate enabled side ads', () => {
+  const ads = parseAds({
+    banner_type: 'embed', banner_html: '<p>top</p>', banner_enabled: '1',
+    bottom_type: 'link', bottom_url: 'https://example.com/bottom', bottom_enabled: '1',
+    left_type: 'image', left_url: 'https://example.com/left', left_image: 'https://example.com/left.webp', left_enabled: '1',
+    right_type: 'embed', right_html: '<p>right</p>', right_enabled: '1'
+  });
+  assert.deepEqual(Object.keys(ads), ['banner', 'bottom', 'left', 'right', 'popup']);
+  assert.equal(ads.left.type, 'image');
+  assert.equal(ads.bottom.url, 'https://example.com/bottom');
+  assert.equal(ads.right.enabled, true);
+  assert.throws(() => parseAds({ left_enabled: '1', left_type: 'image', left_url: 'https://example.com/' }), /left/);
+});
