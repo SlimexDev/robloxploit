@@ -49,6 +49,10 @@ if (dialog) {
 
   function videoHint(video) {
     if (state[video.index].done || video.failed) return;
+    if (!video.hasPlayed) {
+      status(video.index, 'Click the play button on the video above to start watching.', false, '▷');
+      return;
+    }
     const left = Math.ceil(state[video.index].remainingMs / 1000);
     const playbackState = video.player?.getPlayerState?.();
     const message = video.playing ? 'Keep watching…' : playbackState === 2 ? 'Paused — press play to continue' : playbackState === 3 ? 'Buffering…' : playbackState === 0 ? 'Video ended — replay to continue' : 'Press play to continue';
@@ -95,7 +99,7 @@ if (dialog) {
     }
     if (activeVideo?.index === index && (activeVideo.loading || activeVideo.player)) return;
     const video = activeVideo = { index, playing: false, syncing: false, failed: false, loading: true };
-    status(index, 'Loading video… · 40s left', true);
+    status(index, 'Loading video…', true);
     try {
       await loadYouTube();
       const frame = container.querySelector('iframe');
@@ -106,6 +110,7 @@ if (dialog) {
           if (video.disposed) return;
           video.playing = event.data === 1;
           if (video.playing && (!dialog.open || document.hidden)) { video.player.pauseVideo(); video.playing = false; }
+          if (video.playing) video.hasPlayed = true;
           video.failed = false;
           videoHint(video);
           syncPlayback(video);
@@ -174,7 +179,7 @@ if (dialog) {
         buttons[result.next].closest('.task-step').hidden = false;
         buttons[result.next].disabled = false;
         buttons[result.next].classList.add('current');
-        status(result.next, buttons[result.next].dataset.type === 'watch' ? 'Press play to continue · 40s left' : 'Click to start');
+        status(result.next, buttons[result.next].dataset.type === 'watch' ? 'Click the play button on the video above to start watching.' : 'Click to start');
         buttons[result.next].focus({ preventScroll: true });
         prepareVideo(result.next);
         buttons[result.next].closest('.task-step').scrollIntoView({ block: 'nearest' });
@@ -197,10 +202,6 @@ if (dialog) {
     if (current.busy || current.done) return;
     if (button.dataset.type === 'watch') {
       await prepareVideo(index);
-      if (activeVideo?.index === index && activeVideo.player) {
-        activeVideo.failed = false;
-        activeVideo.player.playVideo?.();
-      }
       return;
     }
     if (current.started && Date.now() >= current.readyAt) { await finish(index); return; }
