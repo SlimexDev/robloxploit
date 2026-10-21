@@ -32,16 +32,44 @@ document.querySelectorAll('form[data-confirm]').forEach(form => {
 });
 
 const imageInput = document.querySelector('#image');
+const uploadZone = document.querySelector('.upload-zone');
 let previewUrl;
+function validCover(file) {
+  if (!file || file.size > 3 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    notify('Choose a JPG, PNG or WebP image up to 3 MB.');
+    return false;
+  }
+  return true;
+}
 imageInput?.addEventListener('change', () => {
   const file = imageInput.files[0];
   if (!file) return;
-  if (file.size > 3 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+  if (!validCover(file)) {
     imageInput.value = '';
-    notify('Choose a JPG, PNG or WebP image up to 3 MB.');
     return;
   }
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   previewUrl = URL.createObjectURL(file);
   document.querySelector('#image-preview').src = previewUrl;
 });
+
+if (uploadZone && imageInput) {
+  for (const name of ['dragenter', 'dragover']) uploadZone.addEventListener(name, event => {
+    event.preventDefault();
+    uploadZone.classList.add('drag-over');
+  });
+  uploadZone.addEventListener('dragleave', event => {
+    if (!uploadZone.contains(event.relatedTarget)) uploadZone.classList.remove('drag-over');
+  });
+  uploadZone.addEventListener('drop', event => {
+    event.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    const files = event.dataTransfer?.files;
+    if (files?.length !== 1) { notify('Drop one image file from your computer.'); return; }
+    if (!validCover(files[0])) return;
+    const transfer = new DataTransfer();
+    transfer.items.add(files[0]);
+    imageInput.files = transfer.files;
+    imageInput.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}

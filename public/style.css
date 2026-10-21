@@ -38,3 +38,5 @@ body{isolation:isolate}#particles{position:fixed;inset:0;width:100%;height:100%;
 
 @media(max-width:480px){.unlock-dialog{padding:28px 16px;border-radius:22px}.unlock-dialog h2{font-size:28px}.unlock-dialog .task{padding:16px 14px;gap:8px;grid-template-columns:28px minmax(0,1fr) 24px;min-height:88px;border-radius:18px}.unlock-dialog .task-icon,.unlock-dialog .task-icon .icon{width:24px;height:24px}.task-title{font-size:16px}.task-hint{font-size:11px}.unlock-progress-card{padding:14px}.progress-segments{gap:4px}.unlock-ad-grid{gap:8px}.task-video{border-radius:14px}}
 @media(prefers-reduced-motion:reduce){.progress-segment{transition:none}}
+
+.upload-zone.drag-over{border-color:var(--purple);background:#b49aff15;outline:2px solid var(--purple);outline-offset:3px}.upload-zone.drag-over .upload-prompt{background:#b49aff20}
