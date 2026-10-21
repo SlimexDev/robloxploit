@@ -8,14 +8,63 @@ RobloXploit là kho script Roblox với giao diện tiếng Anh, nền đen/tím
 
 - Tìm kiếm, lọc theo game, phân trang, bài mới nhất trước.
 - Trang chi tiết; code/link được giữ ở máy chủ cho tới khi mở khóa.
-- Đăng ký kênh, xem video, like/comment; có thể gộp hoặc tách hai bước cuối. Mặc định 7 giây/bước; chỉnh trong admin.
+- Nhiệm vụ tùy chọn: đăng ký kênh, xem video, like, comment, gộp like/comment hoặc mở một liên kết khác. Có thể thêm nhiều nhiệm vụ cùng loại, mỗi nhiệm vụ có nhãn và liên kết riêng.
+- Chỉ hiện một nhiệm vụ tại một thời điểm. Hoàn thành sẽ ẩn nhiệm vụ đó, cập nhật thanh tiến trình và hiện bước tiếp theo.
+- Nhiệm vụ mở liên kết mặc định chờ 7 giây; chỉnh trong admin. Nhiệm vụ xem video yêu cầu 40 giây phát trong trình phát YouTube nhúng.
 - Mỗi lần mở lại hoặc tải lại trang chi tiết phải thực hiện nhiệm vụ lại.
 - Hai kiểu nội dung: **Script code** (Copy / Raw) hoặc **Script link** (Get script mở tab mới).
-- Admin thêm/sửa/xóa/ẩn/hiện bài và cấu hình kênh/video dùng chung.
+- Admin thêm/sửa/xóa/ẩn/hiện bài, sắp xếp nhiệm vụ và quản lý cấu hình dùng chung cho các script.
+- Hỗ trợ mã quảng cáo banner và popup trong admin; cửa sổ unlock có ba ô dành chỗ cho quảng cáo.
 - Upload ảnh JPG/PNG/WebP tối đa **3 MB**, chuyển WebP, giới hạn 1280 px và 25 megapixel.
 - Admin tại `/robloxploit-slimexdev`; đường dẫn cũ `/admin` trả về 404. Vẫn bắt buộc đăng nhập.
 
 Nhiệm vụ kiểm tra thứ tự và thời gian từ máy chủ; **không xác minh hành động thật trên YouTube**. Website chỉ lưu/hiển thị script dưới dạng văn bản, không thực thi Lua.
+
+## Quản lý nhiệm vụ và quảng cáo
+
+Đăng nhập tại `/robloxploit-slimexdev/login`.
+
+### Nhiệm vụ mở khóa
+
+Mở `/robloxploit-slimexdev/settings` để thêm, xóa hoặc sắp xếp **1–20 nhiệm vụ**. Mỗi nhiệm vụ có loại, nhãn hiển thị và URL HTTPS riêng. Có thể thêm hai nhiệm vụ đăng ký hai kênh khác nhau hoặc chọn **Open link** cho các website khác. Danh sách nhiệm vụ dùng chung cho mọi script.
+
+Với **Watch video**:
+
+1. Nhập liên kết trực tiếp đến video YouTube có cho phép nhúng; hỗ trợ liên kết dạng `watch`, `youtu.be`, `shorts`, `live` và `embed`.
+2. Khi đến bước xem, video xuất hiện cùng hướng dẫn người dùng tự bấm nút phát trên video. Bấm ô **Watch video** không phát video.
+3. Chỉ sau khi video bắt đầu phát mới hiện số giây còn lại. Người dùng phải tích lũy đủ **40 giây** xem.
+4. Tạm dừng, buffering, chuyển sang tab khác hoặc đóng cửa sổ unlock sẽ dừng bộ đếm. Phát tiếp thì tính tiếp thời gian còn lại.
+5. Khi hoàn thành, bước xem tự ẩn và nhiệm vụ tiếp theo xuất hiện. Hoàn thành toàn bộ nhiệm vụ mới được nhận code hoặc link script.
+
+Máy chủ kiểm tra thứ tự và tích lũy thời gian qua các báo cáo phát video định kỳ, không nhận trực tiếp số giây do trình duyệt tự khai báo. Báo cáo vẫn xuất phát từ trình duyệt; đây không phải bằng chứng độc lập về sự chú ý của người xem hoặc tương tác YouTube.
+
+### Quảng cáo
+
+Mở `/robloxploit-slimexdev/ads` để bật/tắt và nhập mã HTML/embed cho **Banner ad** hoặc **Popup ad**.
+
+- Banner xuất hiện dưới thanh đầu trang trên trang chủ và trang chi tiết script.
+- Popup là cửa sổ có nút đóng, xuất hiện mỗi lần truy cập một trang công khai khi được bật.
+- Ba ô trong cửa sổ unlock hiện chỉ là vị trí dành chỗ, chưa tải quảng cáo và chưa có ô nhập mã riêng trong admin.
+- Mã quảng cáo chạy trong iframe sandbox. Mã yêu cầu truy cập trang cha, cookie hoặc tự mở popunder có thể không hoạt động; cần dùng kiểu nhúng tương thích của nhà cung cấp.
+
+## Cập nhật website đã triển khai
+
+Nếu GitHub đã liên kết với Vercel và database đã có cấu hình nhiệm vụ/quảng cáo, cập nhật giao diện hoặc trình phát video chỉ cần:
+
+```powershell
+git add .
+git commit -m "Update RobloXploit"
+git push
+```
+
+Chờ deployment trên Vercel chuyển sang **Ready**, sau đó tải lại website. Nếu không bật tự triển khai, cần triển khai bản mới thủ công. Riêng các thay đổi giao diện và trình phát video hiện tại **không cần đổi database hoặc thêm biến môi trường**.
+
+Nếu nâng cấp từ bản cũ **chưa có** các cột `tasks_json` và `ads_json`, chạy một lần trước khi triển khai:
+
+- Supabase: `npm run setup:cloud` với cấu hình cloud hiện có.
+- MySQL local: `npm run setup`.
+
+Các lệnh setup bổ sung cấu hình còn thiếu, không xóa thư viện hoặc đổi mật khẩu admin đã tồn tại. Không chạy lại `migrate:cloud` để cập nhật website đã có dữ liệu; lệnh đó chỉ dành cho lần chuyển dữ liệu ban đầu.
 
 ## Kiến trúc
 
@@ -30,7 +79,9 @@ Nhiệm vụ kiểm tra thứ tự và thời gian từ máy chủ; **không xá
 
 Có `DATABASE_URL` thì dùng PostgreSQL; không có thì dùng cấu hình MySQL. Trên Vercel thiếu database hoặc Storage sẽ báo lỗi thay vì ghi dữ liệu vào ổ đĩa tạm. Không có bước build frontend.
 
-## 1. Chuẩn bị Supabase
+## Triển khai lần đầu
+
+### 1. Chuẩn bị Supabase
 
 1. Tạo project Supabase và lưu mật khẩu database. Chọn vùng gần người xem và gần vùng chạy Function trên Vercel.
 2. Mở **Connect → Transaction pooler**, sao chép PostgreSQL connection URI (thường cổng `6543`). Dùng đúng host từ dashboard; URL-encode mật khẩu nếu có ký tự đặc biệt.
@@ -67,7 +118,7 @@ Không tạo policy public cho bảng `scripts`: bảng này chứa code/link kh
 
 Kết nối database xác minh TLS. Không đặt `DATABASE_SSL=disable` trên cloud và không tắt kiểm tra chứng chỉ để sửa lỗi kết nối.
 
-## 2. Chuyển dữ liệu đang có trên máy (tùy chọn)
+### 2. Chuyển dữ liệu đang có trên máy (tùy chọn)
 
 Nếu muốn giữ các bài và ảnh hiện tại:
 
@@ -84,13 +135,14 @@ Lệnh sao chép bài, ID, nội dung, ảnh và cấu hình nhiệm vụ; giữ
 
 Nếu bắt đầu mới, bỏ qua bước này rồi đăng bài trong admin. Không upload thư mục `.runtime` hoặc MySQL data lên GitHub.
 
-## 3. Đưa mã nguồn lên GitHub
+### 3. Đưa mã nguồn lên GitHub
 
 Repository đã có `.gitignore` loại `.env*` chứa bí mật, `.runtime/`, `uploads/`, `node_modules/`, `.vercel/`, backup và log. Chỉ các file `.env.example` / `.env.production.example` mẫu được đưa lên Git.
 
 ```powershell
 npm test
 npm run check:release
+git init
 git status --short
 git add .
 git diff --cached --stat
@@ -107,7 +159,7 @@ git push -u origin main
 
 Nếu đã có `origin`, kiểm tra `git remote -v` và dùng URL đúng thay vì thêm trùng. Không dùng force push. Nếu mật khẩu từng được commit, xóa file khỏi bản mới chưa đủ: phải đổi khóa/mật khẩu và làm sạch lịch sử trước khi public.
 
-## 4. Triển khai Vercel
+### 4. Triển khai Vercel
 
 1. **Add New → Project → Import Git Repository**, chọn repository.
 2. Framework Preset: **Other**. Root Directory: gốc repo.
@@ -132,9 +184,9 @@ Mỗi lần push vào nhánh production, Vercel tự triển khai lại. Nếu �
 
 Ảnh gửi qua Function giới hạn 3 MB để cả form nằm dưới giới hạn payload Vercel; ảnh sau xử lý nằm trong Storage, không lưu trong filesystem của Function. CSS/JS/logo ở `public/` được phục vụ qua CDN. Code/link chỉ trả về sau unlock, các trang động không cache công khai.
 
-Vercel Hobby dành cho dự án cá nhân phi thương mại; kiểm tra điều kiện nếu website dùng để kiếm tiền. Theo dõi Usage của cả hai dịch vụ, đặc biệt băng thông ảnh và số request; mỗi lần bắt đầu/hoàn thành nhiệm vụ đều gọi backend.
+Vercel Hobby dành cho dự án cá nhân phi thương mại; kiểm tra điều kiện nếu website dùng để kiếm tiền. Theo dõi Usage của cả hai dịch vụ, đặc biệt băng thông ảnh và số request; mỗi lần bắt đầu/hoàn thành nhiệm vụ và mỗi báo cáo phát video đều gọi backend.
 
-## 5. Chạy local
+## Chạy local
 
 ### Bản MySQL hiện tại
 
@@ -177,7 +229,8 @@ Cloud test kiểm tra đăng nhập/CSRF, đổi cookie, phiên giữa các inst
 - **500 / không vào được trang:** xem Vercel Function Logs; kiểm tra đã chạy `setup:cloud`, đúng database URI và Supabase đang hoạt động.
 - **Lỗi chứng chỉ:** dùng CA do Supabase cấp trong `DATABASE_CA_CERT`; không dùng `NODE_TLS_REJECT_UNAUTHORIZED=0`.
 - **Ảnh không tải lên:** kiểm tra service role key, bucket `script-covers`, file dưới 3 MB, project còn dung lượng. File được chuyển sang WebP trước khi lưu.
-- **Không mở khóa được:** cấu hình đầy đủ kênh và video trong admin; cho phép trình duyệt mở tab nhiệm vụ.
+- **Không mở khóa được:** cấu hình đầy đủ liên kết nhiệm vụ trong admin; cho phép trình duyệt mở tab đối với nhiệm vụ liên kết.
+- **Video không phát hoặc bộ đếm không chạy:** kiểm tra liên kết trỏ trực tiếp đến video, video còn công khai và cho phép nhúng. Người dùng cần bấm phát trên chính video, giữ tab hoạt động và cửa sổ unlock mở.
 - **Quên mật khẩu:** tạo một tài khoản admin có username mới bằng `setup:cloud` với mật khẩu mới, sau đó quản lý tài khoản cũ qua SQL Editor; setup không ghi đè tài khoản cũ.
 - **Phiên hết hạn:** đăng nhập lại hoặc reload trang script. Phiên 8 giờ, lượt unlock 30 phút. Dữ liệu phiên và rate limit hết hạn được dọn theo lượt truy cập, tối đa 500 hàng/lần mỗi phút trên mỗi instance.
 - **Backup:** sao lưu PostgreSQL và Storage; backup database không chứa file ảnh. Không coi gói Free là hệ thống backup tự động.
@@ -193,7 +246,9 @@ server/cloud-state.js        Phiên giao dịch và rate limit PostgreSQL
 server/storage.js            Supabase Storage API, server-only key
 server/images.js             Chuyển WebP và lưu ảnh
 server/security.js           Hash mật khẩu, CSRF, kiểm tra dữ liệu
-server/unlock.js             Thứ tự và thời gian nhiệm vụ
+server/unlock.js             Thứ tự nhiệm vụ và tích lũy thời gian xem
+server/configuration.js      Loại nhiệm vụ, URL YouTube và mã quảng cáo
+public/unlock.js             Giao diện unlock và trình phát YouTube
 views/                       EJS templates
 public/                      CSS, JavaScript, logo
 supabase/schema.sql          Schema PostgreSQL + RLS
@@ -212,21 +267,3 @@ vercel.json                  Routing và đóng gói Function
 - [Vercel Hobby](https://vercel.com/docs/plans/hobby)
 
 README này hướng dẫn tự triển khai; tài khoản GitHub/Vercel/Supabase, project cloud, tên miền và khóa thật phải do chủ dự án cấu hình.
-#   W e b s i t e - S c r i p t - H u b 
- 
- 
-## Custom unlock tasks and advertisements
-
-Open `/robloxploit-slimexdev/settings` to add, remove, or reorder 1–20 tasks. Select Subscribe, Watch, Like, Comment, Like & comment, or Open link. Each row has its own HTTPS URL and display label; repeated types (such as two YouTube subscriptions) are supported. Sequential unlocking applies to every visit. Link tasks use the shared wait time. Watch tasks require 40 seconds of playback in the embedded YouTube player; pausing, buffering, hiding the tab or closing the unlock dialog stops the watch timer. Use a direct YouTube video link with embedding enabled. The server records bounded playback heartbeats rather than accepting a client-supplied watch duration. These reports come from the browser and are not independent proof of attention or YouTube engagement. Existing YouTube settings remain in use until you save the new list.
-
-Open `/robloxploit-slimexdev/ads` for banner and popup placements. Each has an enable switch and an HTML/embed-code field. Disabled placements render nothing. Enabled ads appear only on the public homepage and script details. The popup is a dismissible modal shown once per document visit. Ad code runs in a sandboxed iframe; providers requiring parent-page access, cookies, or popunders may need a different supported embed from the provider. This is not an AdSense-specific integration.
-
-### Upgrade an existing database before deploying this version
-
-- Supabase: run `npm run setup:cloud` using your existing `.env.production.local`. The schema adds `tasks_json` and `ads_json` columns without deleting posts, existing task links, or admins. Alternatively run the two `ALTER TABLE settings ADD COLUMN IF NOT EXISTS ...` statements in `supabase/schema.sql` using the Supabase SQL Editor.
-- Local MySQL: run `npm run setup`. It adds missing configuration columns without deleting your library.
-- Commit and push the source after the schema upgrade, then let Vercel deploy. No new environment variables are required.
-
-Do not rerun `migrate:cloud` to upgrade a non-empty cloud library: it is intended only for the initial transfer.
-
-The unlock dialog includes a segmented progress indicator, full-width task buttons and three reserved ad placeholders. Only the current task is visible; completing it updates progress, hides that task and shows the next one. These placeholders do not load ads or change the banner/popup configuration. No database changes or new environment variables are needed for the video-player update.
