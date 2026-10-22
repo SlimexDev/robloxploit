@@ -291,4 +291,3 @@ Bật Web Analytics trong Vercel → project robloxploit → Analytics, rồi de
 
 Trong Add/Edit script → Unlock tasks, chọn Use shared tasks hoặc Custom tasks for this post. Bộ riêng hỗ trợ thêm, xóa, sắp xếp nhiệm vụ và link riêng; thời gian chờ vẫn dùng cài đặt chung. Trước khi chạy source mới, dùng `npm run setup` cho MySQL local hoặc `npm run setup:cloud` cho Supabase để thêm cột `scripts.tasks_json`. Bài cũ tiếp tục dùng nhiệm vụ chung.
 
-Để dùng lại một bộ nhiệm vụ, chọn Custom tasks for this post và bấm **Save post & set tasks as default**. Nút này lưu bài và cập nhật nhiệm vụ chung; bài mới tự dùng mặc định, các bài có bộ riêng giữ cấu hình riêng. Cũng có thể sửa mặc định trong Admin → Unlock tasks.

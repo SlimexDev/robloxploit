@@ -162,7 +162,6 @@ async function writeScript(req, res) {
     if (req.afterCommit) req.afterCommit(() => removeImage(old.image));
     else await removeImage(old.image);
   }
-  if (req.body.save_task_defaults === '1' && value.tasks_json) await query('UPDATE settings SET tasks_json=? WHERE id=1', [value.tasks_json]);
   res.redirect(303, '/robloxploit-slimexdev?saved=1');
 }
 
