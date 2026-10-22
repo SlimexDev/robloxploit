@@ -46,3 +46,11 @@ test('script link mode validates URLs and excludes inactive content', () => {
  assert.throws(() => parseScript({...base,content_type:'invalid'}));
  assert.equal(parseScript({...base,content_type:'code'}).script_url, null);
 });
+
+test('post task overrides validate custom tasks and support returning to shared tasks', () => {
+ const post = { title: 'Post', game: 'Game', description: 'Description', code: 'print(1)' };
+ const tasks = [{type:'custom', label:'Visit this post sponsor', url:'https://example.com/'}];
+ assert.deepEqual(JSON.parse(parseScript({...post, tasks_mode:'custom', tasks_json:JSON.stringify(tasks)}).tasks_json), tasks);
+ assert.equal(parseScript({...post, tasks_mode:'global', tasks_json:'invalid'}).tasks_json, null);
+ assert.throws(()=>parseScript({...post, tasks_mode:'custom', tasks_json:'[]'}));
+});

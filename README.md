@@ -282,3 +282,13 @@ README này hướng dẫn tự triển khai; tài khoản GitHub/Vercel/Supabas
 ### Loại quảng cáo
 
 Trong Admin → Advertisements, mỗi vị trí Top banner, Bottom banner, Left sidebar, Right sidebar hoặc Popup overlay có thể chọn HTML/provider embed, ảnh có link HTTPS hoặc nút sponsored link. Bật/tắt riêng từng vị trí; tắt vẫn giữ nội dung. Cấu hình cũ tiếp tục dùng được và không cần đổi schema database. Popup có nút đóng, xuất hiện mỗi lượt tải trang. Mã nhúng chạy sandbox; mã cần truy cập trang chính hoặc tự mở popunder không được hỗ trợ.
+
+### Thống kê truy cập
+
+Bật Web Analytics trong Vercel → project robloxploit → Analytics, rồi deploy source mới. Source đã tích hợp script HTML cho Express/EJS; không dùng component Next.js. Truy cập một trang công khai trên bản deploy rồi mở lại Analytics để xem dữ liệu. Chỉ bật đo trên Vercel, không đo trang admin hoặc localhost. Trình chặn quảng cáo có thể chặn thống kê; dữ liệu không bao gồm truy cập trước khi tích hợp.
+
+### Nhiệm vụ riêng cho bài đăng
+
+Trong Add/Edit script → Unlock tasks, chọn Use shared tasks hoặc Custom tasks for this post. Bộ riêng hỗ trợ thêm, xóa, sắp xếp nhiệm vụ và link riêng; thời gian chờ vẫn dùng cài đặt chung. Trước khi chạy source mới, dùng `npm run setup` cho MySQL local hoặc `npm run setup:cloud` cho Supabase để thêm cột `scripts.tasks_json`. Bài cũ tiếp tục dùng nhiệm vụ chung.
+
+Để dùng lại một bộ nhiệm vụ, chọn Custom tasks for this post và bấm **Save post & set tasks as default**. Nút này lưu bài và cập nhật nhiệm vụ chung; bài mới tự dùng mặc định, các bài có bộ riêng giữ cấu hình riêng. Cũng có thể sửa mặc định trong Admin → Unlock tasks.

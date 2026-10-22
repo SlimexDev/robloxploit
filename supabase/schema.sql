@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS scripts (
   description TEXT NOT NULL,
   code TEXT NOT NULL,
   script_url VARCHAR(2000),
+  tasks_json TEXT,
   image VARCHAR(2048) NOT NULL,
   published SMALLINT NOT NULL DEFAULT 0 CHECK (published IN (0, 1)),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -55,3 +56,5 @@ CREATE TABLE IF NOT EXISTS code_pages (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ALTER TABLE code_pages ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE scripts ADD COLUMN IF NOT EXISTS tasks_json TEXT;

@@ -13,6 +13,7 @@ import { codePages, adminCodePages } from './code-pages.js';
 
 export const app = express();
 app.disable('x-powered-by');
+app.locals.analyticsEnabled = Boolean(process.env.VERCEL);
 if (process.env.VERCEL || process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', path.resolve('views'));
@@ -49,7 +50,7 @@ app.get('/ads/content/:slot', async (req, res) => {
 });
 
 const numericId = (req, res, next) => /^\d{1,10}$/.test(req.params.id) ? next() : res.status(404).render('error', { message: 'This script could not be found.' });
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 1, fields: 10, fieldSize: 400000 }, fileFilter: (req, file, cb) => cb(['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype) ? null : new multer.MulterError('LIMIT_UNEXPECTED_FILE'), true) }).single('image');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 1, fields: 12, fieldSize: 400000 }, fileFilter: (req, file, cb) => cb(['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype) ? null : new multer.MulterError('LIMIT_UNEXPECTED_FILE'), true) }).single('image');
 
 app.get('/', async (req, res) => {
   res.locals.ads = (await getSettings()).ads;
@@ -67,9 +68,10 @@ app.get('/', async (req, res) => {
 });
 
 app.get('/script/:id', numericId, async (req, res) => {
-  const [script] = await query(`SELECT ${publicColumns} FROM scripts WHERE id = ? AND published = 1`, [req.params.id]);
+  const [script] = await query(`SELECT ${publicColumns}, tasks_json FROM scripts WHERE id = ? AND published = 1`, [req.params.id]);
   if (!script) return res.status(404).render('error', { message: 'This script does not exist or is hidden.' });
   const settings = await getSettings();
+  if (script.tasks_json) settings.tasks = JSON.parse(script.tasks_json);
   res.locals.ads = settings.ads;
   const configured = taskList(settings).length > 0 && taskList(settings).every(task => Boolean(task.url));
   // A fresh token per document means reload/back navigation never reuses an unlocked visit.
@@ -129,11 +131,11 @@ app.get('/robloxploit-slimexdev', async (req, res) => {
   res.render('admin-list', { title: 'Manage posts — RobloXploit', scripts, search, status, counts, page, total: matching.count, pageUrl: number => `/robloxploit-slimexdev?${new URLSearchParams({ q: search, status, page: number })}`, notice: req.query.saved ? 'Changes saved.' : null });
 });
 
-app.get('/robloxploit-slimexdev/new', (req, res) => res.render('admin-edit', { title: 'Add script — RobloXploit', script: { title: '', game: '', description: '', code: '', script_url: null, published: false, image: null }, editing: false }));
+app.get('/robloxploit-slimexdev/new', async (req, res) => res.render('admin-edit', { title: 'Add script — RobloXploit', script: { title: '', game: '', description: '', code: '', script_url: null, published: false, image: null }, editing: false, settings: await getSettings(), taskTypes, taskList }));
 app.get('/robloxploit-slimexdev/scripts/:id/edit', numericId, async (req, res) => {
   const [script] = await query('SELECT * FROM scripts WHERE id = ?', [req.params.id]);
   if (!script) return res.status(404).render('error', { message: 'Post not found.' });
-  res.render('admin-edit', { title: 'Edit script — RobloXploit', script, editing: true });
+  res.render('admin-edit', { title: 'Edit script — RobloXploit', script, editing: true, settings: await getSettings(), taskTypes, taskList });
 });
 
 async function writeScript(req, res) {
@@ -150,16 +152,17 @@ async function writeScript(req, res) {
     if (req.file || !editing) newImage = await saveImage(req.file);
     if (newImage && req.afterRollback) req.afterRollback(() => removeImage(newImage));
   } catch (error) {
-    return res.status(422).render('admin-edit', { script: { ...old, title: req.body.title || '', game: req.body.game || '', description: req.body.description || '', code: req.body.code || '', script_url: req.body.content_type === 'link' ? (req.body.script_url || '') : null, published: req.body.published === '1' }, editing, error: error.message });
+    return res.status(422).render('admin-edit', { script: { ...old, title: req.body.title || '', game: req.body.game || '', description: req.body.description || '', code: req.body.code || '', script_url: req.body.content_type === 'link' ? (req.body.script_url || '') : null, published: req.body.published === '1', tasks_json: req.body.tasks_mode === 'custom' ? req.body.tasks_json : null }, editing, settings: await getSettings(), taskTypes, taskList, error: error.message });
   }
   try {
-    if (editing) await query('UPDATE scripts SET title=?, game=?, description=?, code=?, script_url=?, published=?, image=?, updated_at=CURRENT_TIMESTAMP WHERE id=?', [value.title, value.game, value.description, value.code, value.script_url, value.published, newImage || old.image, old.id]);
-    else await query('INSERT INTO scripts (title, game, description, code, script_url, published, image) VALUES (?, ?, ?, ?, ?, ?, ?)', [value.title, value.game, value.description, value.code, value.script_url, value.published, newImage]);
+    if (editing) await query('UPDATE scripts SET title=?, game=?, description=?, code=?, script_url=?, published=?, image=?, tasks_json=?, updated_at=CURRENT_TIMESTAMP WHERE id=?', [value.title, value.game, value.description, value.code, value.script_url, value.published, newImage || old.image, value.tasks_json, old.id]);
+    else await query('INSERT INTO scripts (title, game, description, code, script_url, published, image, tasks_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [value.title, value.game, value.description, value.code, value.script_url, value.published, newImage, value.tasks_json]);
   } catch (error) { if (newImage) await removeImage(newImage); throw error; }
   if (newImage && old) {
     if (req.afterCommit) req.afterCommit(() => removeImage(old.image));
     else await removeImage(old.image);
   }
+  if (req.body.save_task_defaults === '1' && value.tasks_json) await query('UPDATE settings SET tasks_json=? WHERE id=1', [value.tasks_json]);
   res.redirect(303, '/robloxploit-slimexdev?saved=1');
 }
 

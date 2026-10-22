@@ -3,21 +3,8 @@
 <div class="section-heading"><div><h2>Unlock tasks</h2><p>Add the tasks you want. Each task has its own link, and the same type can be added more than once.</p></div></div>
 <form class="form-panel" id="task-editor" method="post" action="/robloxploit-slimexdev/settings">
 <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="tasks_json" id="tasks-json">
-<div id="task-rows">
-<% taskList(settings).forEach((task, index) => { const type = task.type || Object.keys(taskTypes).find(key => taskTypes[key].label === task.label) || 'custom'; %>
-<fieldset class="task-editor-row"><legend>Task <span data-task-number><%= index + 1 %></span></legend>
-<label>Task type<select data-field="type"><% Object.entries(taskTypes).forEach(([key, value]) => { %><option value="<%= key %>" data-label="<%= value.label %>" <%= type === key ? 'selected' : '' %>><%= value.label %></option><% }) %></select></label>
-<label>Button label<input data-field="label" value="<%= task.label %>" maxlength="100" required></label>
-<label>Destination URL<input type="url" data-field="url" value="<%= task.url %>" placeholder="https://..." maxlength="2000" required></label>
-<div class="task-editor-actions"><button class="button secondary small-button" type="button" data-move="-1" aria-label="Move task up">↑ Move up</button><button class="button secondary small-button" type="button" data-move="1" aria-label="Move task down">↓ Move down</button><button class="button secondary small-button" type="button" data-remove>Remove</button></div>
-</fieldset><% }) %></div>
-<template id="task-row-template"><fieldset class="task-editor-row"><legend>Task <span data-task-number></span></legend>
-<label>Task type<select data-field="type"><% Object.entries(taskTypes).forEach(([key, value]) => { %><option value="<%= key %>" data-label="<%= value.label %>"><%= value.label %></option><% }) %></select></label>
-<label>Button label<input data-field="label" value="Subscribe to channel" maxlength="100" required></label>
-<label>Destination URL<input type="url" data-field="url" placeholder="https://..." maxlength="2000" required></label>
-<div class="task-editor-actions"><button class="button secondary small-button" type="button" data-move="-1" aria-label="Move task up">↑ Move up</button><button class="button secondary small-button" type="button" data-move="1" aria-label="Move task down">↓ Move down</button><button class="button secondary small-button" type="button" data-remove>Remove</button></div></fieldset></template>
-<button type="button" class="button secondary" id="add-task">+ Add task</button>
-<p class="field-help">1–20 tasks. Choose Open link for other websites. Tasks are shared across all scripts and completed in the order shown.</p>
+<%- include('partials/task-editor') %>
+<p class="field-help">1–20 tasks. Choose Open link for other websites. These defaults apply to posts without their own tasks and completed in the order shown.</p>
 <label for="wait_seconds">Wait time for link tasks (seconds)</label><input type="number" id="wait_seconds" name="wait_seconds" min="1" max="120" required value="<%= settings.wait_seconds %>">
 <p class="field-help">Watch video tasks require 40 seconds of playback in the embedded YouTube player. Pausing the video, closing the unlock window or switching tabs pauses the watch timer. Use a direct video link with embedding enabled. Other tasks use the wait time above; subscriptions and other interactions are not verified.</p>
 <button class="button" type="submit">Save tasks</button></form></main>

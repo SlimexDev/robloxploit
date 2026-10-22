@@ -1,0 +1,14 @@
+<div id="task-rows">
+<% taskList(settings).forEach((task, index) => { const type = task.type || Object.keys(taskTypes).find(key => taskTypes[key].label === task.label) || 'custom'; %>
+<fieldset class="task-editor-row"><legend>Task <span data-task-number><%= index + 1 %></span></legend>
+<label>Task type<select data-field="type"><% Object.entries(taskTypes).forEach(([key, value]) => { %><option value="<%= key %>" data-label="<%= value.label %>" <%= type === key ? 'selected' : '' %>><%= value.label %></option><% }) %></select></label>
+<label>Button label<input data-field="label" value="<%= task.label %>" maxlength="100" required></label>
+<label>Destination URL<input type="url" data-field="url" value="<%= task.url %>" placeholder="https://..." maxlength="2000" required></label>
+<div class="task-editor-actions"><button class="button secondary small-button" type="button" data-move="-1" aria-label="Move task up">↑ Move up</button><button class="button secondary small-button" type="button" data-move="1" aria-label="Move task down">↓ Move down</button><button class="button secondary small-button" type="button" data-remove>Remove</button></div>
+</fieldset><% }) %></div>
+<template id="task-row-template"><fieldset class="task-editor-row"><legend>Task <span data-task-number></span></legend>
+<label>Task type<select data-field="type"><% Object.entries(taskTypes).forEach(([key, value]) => { %><option value="<%= key %>" data-label="<%= value.label %>"><%= value.label %></option><% }) %></select></label>
+<label>Button label<input data-field="label" value="Subscribe to channel" maxlength="100" required></label>
+<label>Destination URL<input type="url" data-field="url" placeholder="https://..." maxlength="2000" required></label>
+<div class="task-editor-actions"><button class="button secondary small-button" type="button" data-move="-1" aria-label="Move task up">↑ Move up</button><button class="button secondary small-button" type="button" data-move="1" aria-label="Move task down">↓ Move down</button><button class="button secondary small-button" type="button" data-remove>Remove</button></div></fieldset></template>
+<button type="button" class="button secondary" id="add-task">+ Add task</button>

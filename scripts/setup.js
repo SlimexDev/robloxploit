@@ -6,6 +6,7 @@ try {
   if (postgres) throw new Error('Use npm run setup:cloud for Supabase.');
   const sql = await readFile(new URL('../schema.sql', import.meta.url), 'utf8');
   for (const statement of sql.split(';').map(s => s.trim()).filter(Boolean)) await query(statement);
+  if (!(await query("SHOW COLUMNS FROM scripts LIKE 'tasks_json'")).length) await query('ALTER TABLE scripts ADD COLUMN tasks_json TEXT NULL');
   const columns = await query("SHOW COLUMNS FROM scripts LIKE 'script_url'");
   if (!columns.length) await query('ALTER TABLE scripts ADD COLUMN script_url VARCHAR(2000) NULL AFTER code');
   for (const [column, type] of [['tasks_json', 'TEXT'], ['ads_json', 'MEDIUMTEXT']]) {

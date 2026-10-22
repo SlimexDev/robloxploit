@@ -79,6 +79,8 @@ export function parseScript(body) {
     if (typeof body.code !== 'string' || !body.code.trim() || body.code.length > 300000) throw new Error('The code field is invalid or too long.');
     result.code = body.code.trim();
   }
+  if (body.tasks_mode !== undefined && !['global', 'custom'].includes(body.tasks_mode)) throw new Error('Invalid task mode.');
+  result.tasks_json = body.tasks_mode === 'custom' ? JSON.stringify(parseTasks(body.tasks_json)) : null;
   result.published = body.published === '1' ? 1 : 0;
   return result;
 }

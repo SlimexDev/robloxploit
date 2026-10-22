@@ -24,7 +24,7 @@ try {
   await target.query('BEGIN');
   await target.query('LOCK TABLE scripts IN EXCLUSIVE MODE');
   if (Number((await target.query('SELECT COUNT(*) AS count FROM scripts')).rows[0].count)) throw new Error('Target library changed during migration. Retry with an empty target.');
-  for (const row of scripts) await target.query('INSERT INTO scripts (id,title,game,description,code,script_url,image,published,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)', [row.id,row.title,row.game,row.description,row.code,row.script_url,row.image,row.published,row.created_at,row.updated_at]);
+  for (const row of scripts) await target.query('INSERT INTO scripts (id,title,game,description,code,script_url,image,published,created_at,updated_at,tasks_json) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', [row.id,row.title,row.game,row.description,row.code,row.script_url,row.image,row.published,row.created_at,row.updated_at,row.tasks_json || null]);
   await target.query("SELECT setval(pg_get_serial_sequence('scripts','id'), COALESCE(MAX(id),1), COUNT(*)>0) FROM scripts");
   if (settings[0]) { const s=settings[0]; await target.query('UPDATE settings SET channel_url=$1,video_url=$2,combined=$3,wait_seconds=$4 WHERE id=1',[s.channel_url,s.video_url,s.combined,s.wait_seconds]); if (s.tasks_json) await target.query('UPDATE settings SET tasks_json=$1 WHERE id=1', [s.tasks_json]); if (s.ads_json) await target.query('UPDATE settings SET ads_json=$1 WHERE id=1', [s.ads_json]); }
   await target.query('COMMIT');

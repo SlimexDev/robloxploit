@@ -114,6 +114,27 @@ test('MySQL end-to-end library, admin and unlock workflow', async t => {
       assert.deepEqual(await (await api(token,'code')).json(),{url});
       assert.match(await (await request(`/robloxploit-slimexdev/scripts/${id}/edit`)).text(), /PRIVATE_SCRIPT_LINK/);
     });
+    await t.test('per-post tasks persist and override shared tasks until reset', async () => {
+      const tasks = [{type:'custom',label:'Post-specific destination',url:'https://example.com/post-only'}];
+      const previousDefaults = (await query('SELECT tasks_json FROM settings WHERE id=1'))[0].tasks_json;
+      const save = async (mode, defaults = false) => {
+        const body = new FormData();
+        for (const [key,value] of Object.entries({title:'Updated title',game:'QA Game',description:'Updated description',code:'UPDATED_SECRET',published:'1',tasks_mode:mode,tasks_json:JSON.stringify(tasks)})) body.set(key,value);
+        if (defaults) body.set('save_task_defaults','1');
+        return request(`/robloxploit-slimexdev/scripts/${id}/edit?_csrf=${csrf}`,{method:'POST',body});
+      };
+      assert.equal((await save('custom')).status,303);
+      const detail = await(await request(`/script/${id}`)).text();
+      assert.match(detail,/Post-specific destination/);
+      assert.equal((detail.match(/data-task=/g)||[]).length,1);
+      assert.match(await(await request(`/robloxploit-slimexdev/scripts/${id}/edit`)).text(),/Post-specific destination/);
+      assert.equal((await save('custom', true)).status,303);
+      assert.deepEqual(JSON.parse((await query('SELECT tasks_json FROM settings WHERE id=1'))[0].tasks_json),tasks);
+      assert.match(await(await request('/robloxploit-slimexdev/new')).text(),/Post-specific destination/);
+      assert.equal((await save('global')).status,303);
+      assert.equal((await query('SELECT tasks_json FROM scripts WHERE id=?',[id]))[0].tasks_json,null);
+      await query('UPDATE settings SET tasks_json=? WHERE id=1',[previousDefaults]);
+    });
     await t.test('edit retains image; settings split tasks and validate URLs', async () => {
       const body = new FormData();
       for (const [key, value] of Object.entries({ title: 'Updated title', game: 'QA Game', description: 'Updated description', code: 'UPDATED_SECRET', published: '1' })) body.set(key, value);

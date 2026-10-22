@@ -1,4 +1,4 @@
-const editor = document.querySelector('#task-editor');
+const editor = document.querySelector('#task-editor').closest('form');
 const rows = document.querySelector('#task-rows');
 const add = document.querySelector('#add-task');
 function refreshTasks() {
@@ -32,3 +32,13 @@ editor.addEventListener('submit', () => {
   document.querySelector('#tasks-json').value = JSON.stringify([...rows.children].map(row => Object.fromEntries([...row.querySelectorAll('[data-field]')].map(field => [field.dataset.field, field.value]))));
 });
 refreshTasks();
+
+const taskMode = document.querySelector('#post-tasks-mode');
+if (taskMode) {
+  const updateMode = () => {
+    const fields = document.querySelector('#post-custom-tasks');
+    fields.hidden = fields.disabled = taskMode.value !== 'custom';
+  };
+  taskMode.addEventListener('change', updateMode);
+  updateMode();
+}
