@@ -17,7 +17,7 @@ app.locals.analyticsEnabled = Boolean(process.env.VERCEL);
 if (process.env.VERCEL || process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', path.resolve('views'));
-app.use(helmet({ contentSecurityPolicy: { directives: { 'script-src': ["'self'", 'https://www.youtube.com'], 'frame-src': ["'self'", 'https://www.youtube-nocookie.com'], 'style-src': ["'self'"], 'img-src': ["'self'", 'blob:', ...(process.env.SUPABASE_URL ? [new URL(process.env.SUPABASE_URL).origin] : [])], 'upgrade-insecure-requests': process.env.NODE_ENV === 'production' ? [] : null } } }));
+app.use(helmet({ referrerPolicy: { policy: 'strict-origin-when-cross-origin' }, contentSecurityPolicy: { directives: { 'script-src': ["'self'", 'https://www.youtube.com'], 'frame-src': ["'self'", 'https://www.youtube-nocookie.com'], 'style-src': ["'self'"], 'img-src': ["'self'", 'blob:', ...(process.env.SUPABASE_URL ? [new URL(process.env.SUPABASE_URL).origin] : [])], 'upgrade-insecure-requests': process.env.NODE_ENV === 'production' ? [] : null } } }));
 app.use('/assets', express.static(path.resolve('public'), { maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0 }));
 app.use('/uploads', express.static(uploadDir, { maxAge: '7d', immutable: true, index: false }));
 app.use((req, res, next) => {
