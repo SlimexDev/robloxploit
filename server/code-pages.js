@@ -1,3 +1,4 @@
+import { configurePublicAds } from './monetag.js';
 import { Router } from 'express';
 import multer from 'multer';
 import { query, getSettings } from './db.js';
@@ -25,7 +26,7 @@ codePages.get(['/:id', '/:id/:format'], numericId, async (req, res) => {
     if (req.params.format === 'download') res.attachment(`script-${page.id}.lua`);
     return res.type('text/plain').send(page.code);
   }
-  res.locals.ads = (await getSettings()).ads;
+  configurePublicAds(res, (await getSettings()).ads);
   res.render('code-page', { title: `${page.title} — RobloXploit`, page, lines: page.code.split(/\r\n|\r|\n/).length, bytes: Buffer.byteLength(page.code, 'utf8') });
 });
 

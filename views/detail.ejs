@@ -38,5 +38,5 @@ adventure.start()
   <aside class="unlock-ad-space" aria-label="Reserved advertisement placements"><span class="ad-space-label">Advertisement</span><div class="unlock-ad-grid" aria-hidden="true"><% for (let slot = 0; slot < 3; slot++) { %><div class="unlock-ad-placeholder"><span class="ad-image-placeholder"></span><span class="ad-line-placeholder"></span></div><% } %></div></aside>
   <p id="unlock-error" class="inline-error" role="alert"></p><button class="button reveal-button" id="reveal-script" disabled><%- include('partials/icon', { name: 'lock' }) %>Complete tasks to get your script</button>
 </dialog>
-<script src="/assets/unlock.js?v=1.2.1" defer></script>
+<script <% if (typeof scriptNonce !== 'undefined' && scriptNonce) { %>nonce="<%= scriptNonce %>"<% } %> src="/assets/unlock.js?v=1.2.1" defer></script>
 <%- include('partials/footer') %>

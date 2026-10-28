@@ -3,17 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="monetag" content="54b66c9104530c563a610802ccafd82d">
+  <% if (typeof monetagEnabled !== 'undefined' && monetagEnabled) { %><script nonce="<%= scriptNonce %>" src="https://quge5.com/88/tag.min.js" data-zone="302956" async data-cfasync="false"></script><% } %>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="RobloXploit — discover Roblox scripts, browse by game, unlock and copy your favorites.">
   <meta name="csrf-token" content="<%= csrf %>">
   <title><%= title %></title>
   <link rel="icon" href="/assets/robloxploit.png" type="image/png">
   <link rel="stylesheet" href="/assets/style.css?v=1.3.2">
-  <script src="/assets/effects.js?v=1.0.7" defer></script>
-  <script src="/assets/app.js?v=1.2.3" defer></script>
+  <script <% if (typeof scriptNonce !== 'undefined' && scriptNonce) { %>nonce="<%= scriptNonce %>"<% } %> src="/assets/effects.js?v=1.0.7" defer></script>
+  <script <% if (typeof scriptNonce !== 'undefined' && scriptNonce) { %>nonce="<%= scriptNonce %>"<% } %> src="/assets/app.js?v=1.2.3" defer></script>
   <% if (typeof analyticsEnabled !== 'undefined' && analyticsEnabled && !path.startsWith('/robloxploit-slimexdev')) { %>
-  <script src="/assets/analytics.js" defer></script>
-  <script src="/_vercel/insights/script.js" defer></script>
+  <script <% if (typeof scriptNonce !== 'undefined' && scriptNonce) { %>nonce="<%= scriptNonce %>"<% } %> src="/assets/analytics.js" defer></script>
+  <script <% if (typeof scriptNonce !== 'undefined' && scriptNonce) { %>nonce="<%= scriptNonce %>"<% } %> src="/_vercel/insights/script.js" defer></script>
   <% } %>
 </head>
 <body>
@@ -26,5 +27,5 @@
   </div>
 </header>
 
-<% if (ads.banner?.enabled) { %><aside class="ad-banner container" aria-label="Advertisement"><small>Advertisement</small><iframe title="Banner advertisement" src="/ads/content/banner" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" loading="lazy"></iframe></aside><% } %>
+<% if (ads.banner?.enabled && !(typeof monetagEnabled !== 'undefined' && monetagEnabled)) { %><aside class="ad-banner container" aria-label="Advertisement"><small>Advertisement</small><iframe title="Banner advertisement" src="/ads/content/banner" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" loading="lazy"></iframe></aside><% } %>
 <% for (const slot of ['left', 'right']) { if (ads[slot]?.enabled) { %><aside class="ad-side ad-side-<%= slot %>" aria-label="<%= slot %> advertisement"><small>Advertisement</small><iframe title="<%= slot %> advertisement" src="/ads/content/<%= slot %>" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" loading="lazy"></iframe></aside><% } } %>

@@ -291,3 +291,7 @@ Bật Web Analytics trong Vercel → project robloxploit → Analytics, rồi de
 
 Trong Add/Edit script → Unlock tasks, chọn Use shared tasks hoặc Custom tasks for this post. Bộ riêng hỗ trợ thêm, xóa, sắp xếp nhiệm vụ và link riêng; thời gian chờ vẫn dùng cài đặt chung. Trước khi chạy source mới, dùng `npm run setup` cho MySQL local hoặc `npm run setup:cloud` cho Supabase để thêm cột `scripts.tasks_json`. Bài cũ tiếp tục dùng nhiệm vụ chung.
 
+
+### Monetag MultiTag
+
+Banner trên chứa mã `https://quge5.com/88/tag.min.js` zone `302956` sẽ được tích hợp vào head của các trang công khai trên Vercel, thay vì iframe banner. Tắt Banner trên để ngừng nạp MultiTag ở các lượt tải trang sau. File `public/sw.js` do nhà cung cấp cấp được phục vụ tại `/sw.js`; không đổi zoneId trong file. MultiTag có thể hiển thị nhiều định dạng và không cố định vào ô banner. Cần deploy source mới rồi dùng Installation Check trong Monetag.

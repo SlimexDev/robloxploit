@@ -1,4 +1,5 @@
 import express from 'express';
+import { configurePublicAds, isMonetag } from './monetag.js';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import multer from 'multer';
@@ -18,6 +19,12 @@ if (process.env.VERCEL || process.env.TRUST_PROXY === '1') app.set('trust proxy'
 app.set('view engine', 'ejs');
 app.set('views', path.resolve('views'));
 app.use(helmet({ referrerPolicy: { policy: 'strict-origin-when-cross-origin' }, contentSecurityPolicy: { directives: { 'script-src': ["'self'", 'https://www.youtube.com'], 'frame-src': ["'self'", 'https://www.youtube-nocookie.com'], 'style-src': ["'self'"], 'img-src': ["'self'", 'blob:', ...(process.env.SUPABASE_URL ? [new URL(process.env.SUPABASE_URL).origin] : [])], 'upgrade-insecure-requests': process.env.NODE_ENV === 'production' ? [] : null } } }));
+app.get('/sw.js', (req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.set('Service-Worker-Allowed', '/');
+  res.set('Content-Security-Policy', "default-src 'none'; script-src 'self' https://5gvci.com; connect-src https:");
+  res.sendFile(path.resolve('public/sw.js'));
+});
 app.use('/assets', express.static(path.resolve('public'), { maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0 }));
 app.use('/uploads', express.static(uploadDir, { maxAge: '7d', immutable: true, index: false }));
 app.use((req, res, next) => {
@@ -43,7 +50,7 @@ app.use('/robloxploit-slimexdev/code', adminOnly, adminCodePages);
 app.get('/ads/content/:slot', async (req, res) => {
   if (!['banner', 'bottom', 'left', 'right', 'popup'].includes(req.params.slot)) return res.sendStatus(404);
   const ad = (await getSettings()).ads[req.params.slot];
-  if (!ad?.enabled || !adMarkup(ad)) return res.sendStatus(404);
+  if (!ad?.enabled || isMonetag(ad) || !adMarkup(ad)) return res.sendStatus(404);
   // Ad scripts run in an opaque sandbox and cannot read application cookies or the parent page.
   res.set('Content-Security-Policy', "default-src https: data: blob:; script-src https: 'unsafe-inline'; style-src https: 'unsafe-inline'; frame-src https:; connect-src https:; object-src 'none'; base-uri 'none'; sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox");
   res.type('html').send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>Advertisement</title></head><body style="margin:0">${adMarkup(ad)}</body></html>`);
@@ -54,7 +61,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 *
 const likePattern = value => `%${value.replace(/[!%_]/g, '!$&')}%`;
 
 app.get('/', async (req, res) => {
-  res.locals.ads = (await getSettings()).ads;
+  configurePublicAds(res, (await getSettings()).ads);
   const search = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
   const game = typeof req.query.game === 'string' ? req.query.game.slice(0, 100) : '';
   let page = Math.min(10000, Math.max(1, parseInt(req.query.page, 10) || 1));
@@ -74,7 +81,7 @@ app.get('/script/:id', numericId, async (req, res) => {
   if (!script) return res.status(404).render('error', { message: 'This script does not exist or is hidden.' });
   const settings = await getSettings();
   if (script.tasks_json) settings.tasks = JSON.parse(script.tasks_json);
-  res.locals.ads = settings.ads;
+  configurePublicAds(res, settings.ads);
   const configured = taskList(settings).length > 0 && taskList(settings).every(task => Boolean(task.url));
   // A fresh token per document means reload/back navigation never reuses an unlocked visit.
   for (const [token, attempt] of req.session.attempts) {

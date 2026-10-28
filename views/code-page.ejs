@@ -11,5 +11,5 @@
   </section>
   <p class="field-help">Updated <%= date(page.updated_at) %> · Lua · Published by RobloXploit</p>
 </main>
-<script src="/assets/code-page.js?v=2" type="module"></script>
+<script <% if (typeof scriptNonce !== 'undefined' && scriptNonce) { %>nonce="<%= scriptNonce %>"<% } %> src="/assets/code-page.js?v=2" type="module"></script>
 <%- include('partials/footer') %>
