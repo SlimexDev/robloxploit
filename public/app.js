@@ -33,6 +33,8 @@ document.querySelectorAll('form[data-confirm]').forEach(form => {
 
 const imageInput = document.querySelector('#image');
 const uploadZone = document.querySelector('.upload-zone');
+const imagePreview = document.querySelector('#image-preview');
+const originalCover = imagePreview?.src;
 let previewUrl;
 function validCover(file) {
   if (!file || file.size > 3 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
@@ -43,14 +45,16 @@ function validCover(file) {
 }
 imageInput?.addEventListener('change', () => {
   const file = imageInput.files[0];
-  if (!file) return;
-  if (!validCover(file)) {
+  if (!file || !validCover(file)) {
     imageInput.value = '';
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+    imagePreview.src = originalCover;
     return;
   }
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   previewUrl = URL.createObjectURL(file);
-  document.querySelector('#image-preview').src = previewUrl;
+  imagePreview.src = previewUrl;
 });
 
 if (uploadZone && imageInput) {

@@ -47,7 +47,7 @@ async function save(req, res) {
   if (editing && !(await query('SELECT id FROM code_pages WHERE id=?', [req.params.id])).length) return res.status(404).render('error', { message: 'Script code page not found.' });
   let value;
   try { value = parseCodePage(req.body); }
-  catch (error) { return res.status(422).render('admin-code-edit', { page: { id: req.params.id, title: typeof req.body.title === 'string' ? req.body.title : '', code: typeof req.body.code === 'string' ? req.body.code : '', published: req.body.published === '1' }, editing, error: error.message }); }
+  catch (error) { return res.status(422).render('admin-code-edit', { title: `${editing ? 'Edit' : 'New'} script code page — RobloXploit`, page: { id: req.params.id, title: typeof req.body.title === 'string' ? req.body.title : '', code: typeof req.body.code === 'string' ? req.body.code : '', published: req.body.published === '1' }, editing, error: error.message }); }
   if (editing) await query('UPDATE code_pages SET title=?,code=?,published=?,updated_at=CURRENT_TIMESTAMP WHERE id=?', [value.title, value.code, value.published, req.params.id]);
   else await query('INSERT INTO code_pages (title,code,published) VALUES (?,?,?)', [value.title, value.code, value.published]);
   res.redirect(303, '/robloxploit-slimexdev/code?saved=1');

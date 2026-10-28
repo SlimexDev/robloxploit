@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import pg from 'pg';
+import { libraryRegressions } from '../helpers/library-regressions.js';
 import { hashPassword } from '../../server/security.js';
 
 // TEST_DATABASE_URL must point to a disposable PostgreSQL database; use a private test schema.
@@ -54,6 +55,7 @@ test('PostgreSQL cloud sessions, CRUD and concurrent unlock across app instances
       assert.match(dashboard,/Manage posts/);csrf=dashboard.match(/name="csrf-token" content="([^"]+)"/)[1];
       assert.equal((await fetch(origin+'/robloxploit-slimexdev',{redirect:'manual',headers:{Cookie:before}})).status,303);
     });
+    await libraryRegressions(t, { query, request, form, csrf });
     await t.test('standalone code pages persist, export safely and block hidden pages',async()=>{
       const code='  print("cloud")\n-- </code><script>CODE_PAGE_TEST</script>\n';
       assert.equal((await request('/robloxploit-slimexdev/code',form({title:'Cloud code',code,published:'1'}))).status,303);

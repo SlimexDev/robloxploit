@@ -26,7 +26,7 @@ adventure.start()
   <div class="tasks">
     <% attempt.tasks.forEach((task, index) => { %>
       <div class="task-step" data-step="<%= index %>" <%= index ? 'hidden' : '' %>>
-        <% if (task.type === 'watch') { %><div class="task-video" id="task-video-<%= index %>" hidden><iframe id="youtube-player-<%= index %>" class="youtube-player" title="YouTube video: <%= task.label %>" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div><% } %>
+        <% if (task.type === 'watch') { %><div class="task-video" id="task-video-<%= index %>" hidden><iframe id="youtube-player-<%= index %>" class="youtube-player" title="YouTube video: <%= task.label %>" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe></div><% } %>
         <button type="button" class="task task-button <%= index === 0 ? 'current' : '' %>" data-task="<%= index %>" data-type="<%= task.type %>" data-video-id="<%= task.videoId || '' %>" aria-describedby="task-hint-<%= index %>" <%= index ? 'disabled' : '' %>>
           <span class="task-icon"><%- include('partials/icon', { name: task.type === 'custom' ? 'external' : 'play' }) %></span>
           <span class="task-copy"><span class="task-title"><%= task.label %></span><span class="task-hint" id="task-hint-<%= index %>"><%= index ? 'Complete the previous step first' : task.type === 'watch' ? 'Click the play button on the video above to start watching.' : 'Click to start' %></span></span>

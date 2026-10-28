@@ -7,7 +7,7 @@ test('dropping a cover selects the upload file, previews it and rejects invalid 
   const handlers = {}, classes = new Set();
   const input = { files: [], addEventListener: (name, handler) => { handlers[name] = handler; }, dispatchEvent: event => handlers[event.type]() };
   const zone = { addEventListener: (name, handler) => { handlers[name] = handler; }, classList: { add: name => classes.add(name), remove: name => classes.delete(name) }, contains: () => false };
-  const preview = {}, toast = {};
+  const preview = { src: '/original-cover.webp' }, toast = {};
   let created = 0, revoked = 0;
   const elements = { '#image': input, '.upload-zone': zone, '#image-preview': preview, '#toast': toast };
   vm.runInNewContext(readFileSync('public/app.js', 'utf8'), {
@@ -36,4 +36,9 @@ test('dropping a cover selects the upload file, previews it and rejects invalid 
   assert.equal(preview.src, 'blob:preview-2');
   assert.equal(revoked, 1);
   assert.equal(prevented, 7);
+  input.files = [{ type: 'text/plain', size: 100 }];
+  handlers.change();
+  assert.equal(input.value, '');
+  assert.equal(preview.src, '/original-cover.webp');
+  assert.equal(revoked, 2);
 });

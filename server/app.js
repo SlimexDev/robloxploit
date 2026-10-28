@@ -50,20 +50,22 @@ app.get('/ads/content/:slot', async (req, res) => {
 });
 
 const numericId = (req, res, next) => /^\d{1,10}$/.test(req.params.id) ? next() : res.status(404).render('error', { message: 'This script could not be found.' });
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 1, fields: 12, fieldSize: 400000 }, fileFilter: (req, file, cb) => cb(['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype) ? null : new multer.MulterError('LIMIT_UNEXPECTED_FILE'), true) }).single('image');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 1, fields: 12, fieldSize: 1200000 }, fileFilter: (req, file, cb) => cb(['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype) ? null : new multer.MulterError('LIMIT_UNEXPECTED_FILE'), true) }).single('image');
+const likePattern = value => `%${value.replace(/[!%_]/g, '!$&')}%`;
 
 app.get('/', async (req, res) => {
   res.locals.ads = (await getSettings()).ads;
   const search = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
   const game = typeof req.query.game === 'string' ? req.query.game.slice(0, 100) : '';
-  const page = Math.min(10000, Math.max(1, parseInt(req.query.page, 10) || 1));
+  let page = Math.min(10000, Math.max(1, parseInt(req.query.page, 10) || 1));
   const where = ['published = 1'];
   const params = [];
-  if (search) { where.push('(title LIKE ? OR game LIKE ?)'); params.push(`%${search}%`, `%${search}%`); }
+  if (search) { where.push("(title LIKE ? ESCAPE '!' OR game LIKE ? ESCAPE '!')"); params.push(likePattern(search), likePattern(search)); }
   if (game) { where.push('game = ?'); params.push(game); }
+  const count = await query(`SELECT COUNT(*) AS count FROM scripts WHERE ${where.join(' AND ')}`, params);
+  page = Math.min(page, Math.max(1, Math.ceil(count[0].count / 12)));
   const scripts = await query(`SELECT ${publicColumns} FROM scripts WHERE ${where.join(' AND ')} ORDER BY created_at DESC, id DESC LIMIT 12 OFFSET ${(page - 1) * 12}`, params);
   const games = await query('SELECT game, COUNT(*) AS count FROM scripts WHERE published = 1 GROUP BY game ORDER BY count DESC, game');
-  const count = await query(`SELECT COUNT(*) AS count FROM scripts WHERE ${where.join(' AND ')}`, params);
   res.render('home', { scripts, games, search, game, page, total: count[0].count, pageUrl: number => `/?${new URLSearchParams({ q: search, game, page: number })}` });
 });
 
@@ -108,9 +110,9 @@ app.get('/robloxploit-slimexdev/login', (req, res) => req.session.admin ? res.re
 const loginLimit = rateLimit({ ...(postgres ? { store: new DatabaseRateStore('login:') } : {}), windowMs: 15 * 60_000, limit: 10, standardHeaders: 'draft-8', legacyHeaders: false, skipSuccessfulRequests: true, message: 'Too many sign-in attempts. Please try again in 15 minutes.' });
 app.post('/robloxploit-slimexdev/login', loginLimit, csrfGuard, async (req, res) => {
   const { username, password } = req.body;
-  if (typeof username !== 'string' || username.length > 80 || typeof password !== 'string' || password.length > 256) return res.status(400).render('login', { error: 'Invalid sign-in details.' });
+  if (typeof username !== 'string' || username.length > 80 || typeof password !== 'string' || password.length > 256) return res.status(400).render('login', { title: 'Admin login — RobloXploit', error: 'Invalid sign-in details.' });
   const [admin] = await query('SELECT id, password_hash FROM admins WHERE username = ?', [username]);
-  if (!admin || !await verifyPassword(password, admin.password_hash)) return res.status(401).render('login', { error: 'Incorrect username or password.' });
+  if (!admin || !await verifyPassword(password, admin.password_hash)) return res.status(401).render('login', { title: 'Admin login — RobloXploit', error: 'Incorrect username or password.' });
   req.rotateSession();
   req.session.admin = admin.id;
   res.redirect(303, '/robloxploit-slimexdev');
@@ -121,13 +123,13 @@ app.use('/robloxploit-slimexdev', adminOnly);
 app.get('/robloxploit-slimexdev', async (req, res) => {
   const search = typeof req.query.q === 'string' ? req.query.q.slice(0, 100) : '';
   const status = ['published', 'hidden'].includes(req.query.status) ? req.query.status : '';
-  const params = [`%${search}%`, `%${search}%`];
-  const where = `(title LIKE ? OR game LIKE ?)${status ? ' AND published = ?' : ''}`;
+  const params = [likePattern(search), likePattern(search)];
+  const where = `(title LIKE ? ESCAPE '!' OR game LIKE ? ESCAPE '!')${status ? ' AND published = ?' : ''}`;
   if (status) params.push(status === 'published' ? 1 : 0);
-  const page = Math.max(1, Math.min(10000, parseInt(req.query.page, 10) || 1));
+  const [matching] = await query(`SELECT COUNT(*) AS count FROM scripts WHERE ${where}`, params);
+  const page = Math.min(Math.max(1, Math.min(10000, parseInt(req.query.page, 10) || 1)), Math.max(1, Math.ceil(matching.count / 30)));
   const scripts = await query(`SELECT ${publicColumns}, published FROM scripts WHERE ${where} ORDER BY created_at DESC, id DESC LIMIT 30 OFFSET ${(page - 1) * 30}`, params);
   const [counts] = await query('SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN published = 1 THEN 1 ELSE 0 END), 0) AS published, COALESCE(SUM(CASE WHEN published = 0 THEN 1 ELSE 0 END), 0) AS hidden FROM scripts');
-  const [matching] = await query(`SELECT COUNT(*) AS count FROM scripts WHERE ${where}`, params);
   res.render('admin-list', { title: 'Manage posts — RobloXploit', scripts, search, status, counts, page, total: matching.count, pageUrl: number => `/robloxploit-slimexdev?${new URLSearchParams({ q: search, status, page: number })}`, notice: req.query.saved ? 'Changes saved.' : null });
 });
 
@@ -152,7 +154,7 @@ async function writeScript(req, res) {
     if (req.file || !editing) newImage = await saveImage(req.file);
     if (newImage && req.afterRollback) req.afterRollback(() => removeImage(newImage));
   } catch (error) {
-    return res.status(422).render('admin-edit', { script: { ...old, title: req.body.title || '', game: req.body.game || '', description: req.body.description || '', code: req.body.code || '', script_url: req.body.content_type === 'link' ? (req.body.script_url || '') : null, published: req.body.published === '1', tasks_json: req.body.tasks_mode === 'custom' ? req.body.tasks_json : null }, editing, settings: await getSettings(), taskTypes, taskList, error: error.message });
+    return res.status(422).render('admin-edit', { title: `${editing ? 'Edit' : 'Add'} script — RobloXploit`, script: { ...old, title: req.body.title || '', game: req.body.game || '', description: req.body.description || '', code: req.body.code || '', script_url: req.body.content_type === 'link' ? (req.body.script_url || '') : null, published: req.body.published === '1', tasks_json: req.body.tasks_mode === 'custom' ? req.body.tasks_json : null }, editing, settings: await getSettings(), taskTypes, taskList, error: error.message });
   }
   try {
     if (editing) await query('UPDATE scripts SET title=?, game=?, description=?, code=?, script_url=?, published=?, image=?, tasks_json=?, updated_at=CURRENT_TIMESTAMP WHERE id=?', [value.title, value.game, value.description, value.code, value.script_url, value.published, newImage || old.image, value.tasks_json, old.id]);
@@ -190,7 +192,7 @@ app.post('/robloxploit-slimexdev/settings', csrfGuard, async (req, res) => {
       const tasks = JSON.parse(req.body.tasks_json);
       if (Array.isArray(tasks) && tasks.length > 0 && tasks.length <= 20 && tasks.every(task => task && Object.hasOwn(taskTypes, task.type) && typeof task.label === 'string' && typeof task.url === 'string')) draft.tasks = tasks;
     } catch { /* Keep saved settings if the submitted list is malformed. */ }
-    return res.status(422).render('admin-settings', { settings: draft, taskTypes, taskList, error: error.message });
+    return res.status(422).render('admin-settings', { title: 'Unlock tasks — RobloXploit', settings: draft, taskTypes, taskList, error: error.message });
   }
   if (settings.tasks) await query('UPDATE settings SET tasks_json=?, wait_seconds=? WHERE id=1', [JSON.stringify(settings.tasks), settings.wait_seconds]);
   else await query('UPDATE settings SET channel_url=?, video_url=?, combined=?, wait_seconds=?, tasks_json=NULL WHERE id=1', [settings.channel_url, settings.video_url, settings.combined, settings.wait_seconds]);
@@ -201,7 +203,7 @@ app.get('/robloxploit-slimexdev/ads', async (req, res) => res.render('admin-ads'
 app.post('/robloxploit-slimexdev/ads', csrfGuard, async (req, res) => {
   let config;
   try { config = parseAds(req.body); }
-  catch (error) { return res.status(422).render('admin-ads', { config: adDraft(req.body), error: error.message }); }
+  catch (error) { return res.status(422).render('admin-ads', { title: 'Advertisements — RobloXploit', config: adDraft(req.body), error: error.message }); }
   await query('UPDATE settings SET ads_json=? WHERE id=1', [JSON.stringify(config)]);
   res.redirect(303, '/robloxploit-slimexdev/ads?saved=1');
 });
@@ -209,8 +211,13 @@ app.post('/robloxploit-slimexdev/ads', csrfGuard, async (req, res) => {
 app.use((req, res) => res.status(404).render('error', { message: 'The page you are looking for does not exist.' }));
 app.use((error, req, res, next) => {
   if (res.headersSent) return next(error);
-  console.error('Request failed:', error.code || error.name);
-  if (req.path.startsWith('/api/')) return res.status(500).json({ error: 'Something went wrong. Please try again.' });
-  const message = error instanceof multer.MulterError ? 'Upload one JPG, PNG or WebP image up to 3 MB. Go back to try again.' : 'Something went wrong. Please try again later.';
-  res.status(error instanceof multer.MulterError ? 422 : 500).render('error', { message });
+  const errorStatus = error.status ?? error.statusCode;
+  const status = error instanceof multer.MulterError ? 422 : Number.isInteger(errorStatus) && errorStatus >= 400 && errorStatus < 500 ? errorStatus : 500;
+  if (status === 500) console.error('Request failed:', error.code || error.name);
+  let message = status === 413 ? 'Request too large.' : status < 500 ? 'Invalid request body.' : 'Something went wrong. Please try again later.';
+  if (error instanceof multer.MulterError) message = error.code === 'LIMIT_FIELD_VALUE'
+    ? `${error.field === 'code' ? 'Script code' : 'Form field'} is too large. Code supports up to 300,000 characters.`
+    : 'Upload one JPG, PNG or WebP image up to 3 MB. Go back to try again.';
+  if (req.path.startsWith('/api/')) return res.status(status).json({ error: message });
+  res.status(status).render('error', { title: 'Request error — RobloXploit', message });
 });

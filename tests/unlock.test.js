@@ -63,3 +63,8 @@ test('new visit is locked and attempts expire', () => {
   assert.equal(attempt.done, false);
   assert.throws(() => startStep(attempt, 0, 1000 + 31 * 60_000), /expired/);
 });
+
+test('YouTube video links accept trailing slashes without accepting extra path segments', () => {
+  for (const url of ['https://youtu.be/M7lc1UVf-VE/', 'https://www.youtube.com/watch/?v=M7lc1UVf-VE', 'https://youtube.com/shorts/M7lc1UVf-VE/']) assert.equal(youtubeVideoId(url), 'M7lc1UVf-VE');
+  for (const url of ['https://youtu.be/M7lc1UVf-VE/extra/', 'https://youtube.com/shorts/M7lc1UVf-VE/extra/']) assert.equal(youtubeVideoId(url), null);
+});

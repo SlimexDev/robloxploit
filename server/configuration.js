@@ -11,10 +11,11 @@ export function youtubeVideoId(value) {
   let url;
   try { url = new URL(value); } catch { return null; }
   if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
+  const pathname = url.pathname.replace(/\/+$/, '');
   let id;
-  if (url.hostname === 'youtu.be') id = url.pathname.slice(1);
+  if (url.hostname === 'youtu.be') id = pathname.slice(1);
   else if (['youtube.com', 'www.youtube.com', 'm.youtube.com'].includes(url.hostname)) {
-    id = url.pathname === '/watch' ? url.searchParams.get('v') : url.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)$/)?.[1];
+    id = pathname === '/watch' ? url.searchParams.get('v') : pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)$/)?.[1];
   }
   return /^[\w-]{11}$/.test(id || '') ? id : null;
 }
